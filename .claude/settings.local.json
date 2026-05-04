@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql --version)",
+      "Bash(pg_isready)",
+      "Bash(npm --version)",
+      "PowerShell(psql --version 2>&1)",
+      "PowerShell(pg_isready 2>&1)",
+      "PowerShell(docker --version 2>&1)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"admin@stock.com\",\"password\":\"admin123\",\"role\":\"Admin\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"user@stock.com\",\"password\":\"user123\",\"role\":\"User\"}')",
+      "PowerShell(Start-Process \"http://localhost:5173\")",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)"
+    ]
+  }
+}
