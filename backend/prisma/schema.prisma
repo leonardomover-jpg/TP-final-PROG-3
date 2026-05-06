@@ -1,51 +1,105 @@
+// ============================================================
+//  SCHEMA DE BASE DE DATOS — Prisma ORM
+//  Define las tablas, columnas y relaciones del sistema.
+//  Prisma lee este archivo y genera el cliente TypeScript
+//  para interactuar con la base de datos sin escribir SQL.
+// ============================================================
+
+// Genera el cliente de Prisma para TypeScript
 generator client {
   provider = "prisma-client-js"
 }
 
+// Configuración de la base de datos
+// En desarrollo usa SQLite (archivo local dev.db)
+// En producción se puede cambiar a PostgreSQL con la variable DATABASE_URL
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
+// ============================================================
+//  TABLA: User (Usuarios)
+//  Almacena las cuentas de acceso al sistema.
+//  Un usuario puede tener rol "Admin" (acceso total) o "User" (solo ventas).
+// ============================================================
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  role     String @default("User")
-  sales    Sale[]
+  id       Int    @id @default(autoincrement()) // Clave primaria, se incrementa sola
+  email    String @unique                        // Email único, se usa para iniciar sesión
+  password String                               // Contraseña hasheada con bcrypt (nunca en texto plano)
+  role     String @default("User")              // Rol: "Admin" o "User"
+
+  // Relación: un usuario puede tener muchas ventas (1:N)
+  sales Sale[]
 }
 
+// ============================================================
+//  TABLA: Category (Categorías)
+//  Agrupa los productos por tipo (ej: Electrónica, Ropa, etc.).
+//  Cada categoría puede tener muchos productos.
+// ============================================================
 model Category {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
+  id   Int    @id @default(autoincrement()) // Clave primaria
+  name String @unique                       // Nombre de categoría, no se puede repetir
+
+  // Relación: una categoría puede tener muchos productos (1:N)
   products Product[]
 }
 
+// ============================================================
+//  TABLA: Product (Productos)
+//  Representa los artículos del inventario disponibles para vender.
+//  Cada producto pertenece a una categoría y lleva control de stock.
+// ============================================================
 model Product {
-  id          Int          @id @default(autoincrement())
-  name        String
-  price       Float
-  stock       Int
-  categoryId  Int
+  id         Int    @id @default(autoincrement()) // Clave primaria
+  name       String                               // Nombre del producto
+  price      Float                                // Precio unitario de venta
+  stock      Int                                  // Cantidad disponible en inventario
+  categoryId Int                                  // Clave foránea → apunta a Category.id
+
+  // Relación con Category: muchos productos pertenecen a una categoría (N:1)
   category    Category     @relation(fields: [categoryId], references: [id])
+
+  // Relación: un producto puede aparecer en muchos detalles de venta (1:N)
   saleDetails SaleDetail[]
 }
 
+// ============================================================
+//  TABLA: Sale (Ventas / Cabecera de factura)
+//  Registra cada transacción de venta.
+//  Guarda el total, la fecha y el usuario que realizó la venta.
+//  Los productos vendidos se guardan en SaleDetail.
+// ============================================================
 model Sale {
-  id        Int          @id @default(autoincrement())
-  total     Float
-  createdAt DateTime     @default(now())
-  userId    Int
-  user      User         @relation(fields: [userId], references: [id])
-  details   SaleDetail[]
+  id        Int      @id @default(autoincrement()) // Clave primaria
+  total     Float                                   // Monto total de la venta (suma de ítems)
+  createdAt DateTime @default(now())               // Fecha y hora automática al crear la venta
+  userId    Int                                     // Clave foránea → apunta a User.id
+
+  // Relación con User: cada venta pertenece a un usuario (N:1)
+  user    User         @relation(fields: [userId], references: [id])
+
+  // Relación: cada venta tiene uno o más detalles de ítem (1:N)
+  details SaleDetail[]
 }
 
+// ============================================================
+//  TABLA: SaleDetail (Detalle de venta / Línea de factura)
+//  Representa cada producto dentro de una venta.
+//  Si una venta tiene 3 productos distintos, habrá 3 registros SaleDetail.
+//  Guarda el precio al momento de la venta (por si el precio cambia después).
+// ============================================================
 model SaleDetail {
-  id        Int     @id @default(autoincrement())
-  saleId    Int
-  productId Int
-  quantity  Int
-  unitPrice Float
-  sale      Sale    @relation(fields: [saleId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  id        Int   @id @default(autoincrement()) // Clave primaria
+  saleId    Int                                  // Clave foránea → apunta a Sale.id
+  productId Int                                  // Clave foránea → apunta a Product.id
+  quantity  Int                                  // Cantidad de unidades vendidas
+  unitPrice Float                                // Precio unitario al momento de la venta
+
+  // Relación con Sale: este detalle pertenece a una venta (N:1)
+  sale    Sale    @relation(fields: [saleId], references: [id])
+
+  // Relación con Product: este detalle referencia a un producto (N:1)
+  product Product @relation(fields: [productId], references: [id])
 }
