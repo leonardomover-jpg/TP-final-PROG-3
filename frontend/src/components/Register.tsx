@@ -1,14 +1,30 @@
+// ============================================================
+//  COMPONENTE REGISTER (components/Register.tsx)
+//  Pantalla de registro de nuevos usuarios.
+//  Permite elegir el rol (Admin o User) al momento de crear la cuenta.
+//  Después de registrarse exitosamente, el usuario debe ir al Login.
+// ============================================================
+
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+/** Props: onToggle permite volver a la pantalla de login */
 export default function Register({ onToggle }: { onToggle: () => void }) {
-  const { register } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('User');
-  const [msg, setMsg] = useState('');
-  const [isError, setIsError] = useState(false);
+  const { register } = useAuth(); // Función de registro del contexto global
 
+  // Estados del formulario
+  const [email,    setEmail]    = useState('');
+  const [password, setPassword] = useState('');
+  const [role,     setRole]     = useState('User'); // Rol por defecto: "User"
+  const [msg,      setMsg]      = useState('');     // Mensaje de feedback (éxito o error)
+  const [isError,  setIsError]  = useState(false);  // Define el color del mensaje
+
+  /**
+   * handleSubmit — Envía los datos de registro al backend.
+   * Si es exitoso: muestra mensaje verde "Registro exitoso".
+   * Si falla (ej: email ya registrado): muestra mensaje rojo de error.
+   * No inicia sesión automáticamente → el usuario debe ir al Login después.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -25,11 +41,14 @@ export default function Register({ onToggle }: { onToggle: () => void }) {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-xl shadow w-full max-w-sm">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Registrarse</h2>
+
+        {/* Mensaje de feedback: verde si OK, rojo si error */}
         {msg && (
           <p className={`mb-4 text-sm p-2 rounded ${isError ? 'text-red-500 bg-red-50' : 'text-green-600 bg-green-50'}`}>
             {msg}
           </p>
         )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -47,6 +66,8 @@ export default function Register({ onToggle }: { onToggle: () => void }) {
             onChange={e => setPassword(e.target.value)}
             required
           />
+
+          {/* Selector de rol: Admin tiene permisos de escritura, User solo lectura/ventas */}
           <select
             className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
             value={role}
@@ -55,6 +76,7 @@ export default function Register({ onToggle }: { onToggle: () => void }) {
             <option value="User">Usuario</option>
             <option value="Admin">Admin</option>
           </select>
+
           <button
             className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition font-medium"
             type="submit"
@@ -62,6 +84,8 @@ export default function Register({ onToggle }: { onToggle: () => void }) {
             Registrarse
           </button>
         </form>
+
+        {/* Link para volver al login */}
         <p className="mt-4 text-center text-sm text-gray-600">
           ¿Ya tenés cuenta?{' '}
           <button onClick={onToggle} className="text-blue-600 hover:underline font-medium">

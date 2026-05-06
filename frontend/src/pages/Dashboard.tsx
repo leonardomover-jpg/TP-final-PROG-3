@@ -1,7 +1,22 @@
+// ============================================================
+//  PÁGINA: DASHBOARD (pages/Dashboard.tsx)
+//  Panel de control con métricas generales del negocio.
+//  Muestra 4 tarjetas KPI y dos listas: stock crítico y ventas recientes.
+//
+//  KPI = Key Performance Indicator (indicador clave de rendimiento)
+//  Este componente no tiene WebSocket porque es una vista de resumen
+//  que se carga una sola vez al entrar.
+// ============================================================
+
 import { useState, useEffect, ReactNode } from 'react';
 import api from '../services/api';
 import { Product, Sale } from '../types';
 
+/**
+ * StatCard — Componente reutilizable para mostrar una métrica con ícono.
+ * Recibe el título, valor, subtítulo, color de fondo y un ícono SVG.
+ * Se usa 4 veces en el Dashboard para las 4 KPIs principales.
+ */
 function StatCard({
   title,
   value,
@@ -9,14 +24,15 @@ function StatCard({
   colorClass,
   icon,
 }: {
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  colorClass: string;
-  icon: ReactNode;
+  title:      string;
+  value:      string | number; // Puede ser número o string (ej: "$1.500")
+  subtitle?:  string;          // Texto pequeño debajo del valor (opcional)
+  colorClass: string;          // Clases de Tailwind para el color del ícono
+  icon:       ReactNode;       // Componente SVG del ícono
 }) {
   return (
     <div className="bg-white rounded-xl shadow-sm p-5 flex items-start gap-4">
+      {/* Ícono con fondo de color */}
       <div className={`${colorClass} p-3 rounded-xl flex-shrink-0`}>{icon}</div>
       <div className="min-w-0">
         <p className="text-sm text-gray-500 font-medium">{title}</p>
@@ -29,9 +45,10 @@ function StatCard({
 
 export default function Dashboard() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sales,    setSales]    = useState<Sale[]>([]);
+  const [loading,  setLoading]  = useState(true);
 
+  // Carga productos y ventas en paralelo con Promise.all (más eficiente que dos awaits separados)
   useEffect(() => {
     Promise.all([api.get('/products'), api.get('/sales')]).then(([p, s]) => {
       setProducts(p.data);
@@ -48,15 +65,26 @@ export default function Dashboard() {
     );
   }
 
-  const inventoryValue = products.reduce((sum, p) => sum + p.price * p.stock, 0);
-  const lowStock = products.filter(p => p.stock <= 5);
-  const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
+  // ── Cálculos de métricas ─────────────────────────────────────
+  // Valor total del inventario: suma de (precio × stock) por cada producto
+  const inventoryValue   = products.reduce((sum, p) => sum + p.price * p.stock, 0);
+
+  // Productos con stock crítico (≤5 unidades, incluyendo los sin stock)
+  const lowStock         = products.filter(p => p.stock <= 5);
+
+  // Total de unidades en inventario
+  const totalStock       = products.reduce((sum, p) => sum + p.stock, 0);
+
+  // Total facturado: suma de todos los totales de ventas
   const totalSalesAmount = sales.reduce((sum, s) => sum + s.total, 0);
 
   return (
     <div className="space-y-6">
-      {/* Stat cards */}
+
+      {/* ── TARJETAS KPI ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+        {/* KPI 1: Total de productos en el sistema */}
         <StatCard
           title="Total Productos"
           value={products.length}
@@ -68,6 +96,8 @@ export default function Dashboard() {
             </svg>
           }
         />
+
+        {/* KPI 2: Valor del inventario al precio de venta actual */}
         <StatCard
           title="Valor Inventario"
           value={`$${inventoryValue.toLocaleString('es-AR')}`}
@@ -79,6 +109,8 @@ export default function Dashboard() {
             </svg>
           }
         />
+
+        {/* KPI 3: Cantidad de ventas y monto total facturado */}
         <StatCard
           title="Total Ventas"
           value={sales.length}
@@ -90,6 +122,8 @@ export default function Dashboard() {
             </svg>
           }
         />
+
+        {/* KPI 4: Stock crítico — rojo si hay productos en alerta, gris si todo está bien */}
         <StatCard
           title="Stock Crítico"
           value={lowStock.length}
@@ -103,8 +137,10 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* ── LISTAS DETALLADAS ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Low stock */}
+
+        {/* Lista de productos con stock crítico (solo se muestra si hay alguno) */}
         {lowStock.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
@@ -121,6 +157,7 @@ export default function Dashboard() {
                     <p className="font-medium text-gray-900 text-sm">{p.name}</p>
                     <p className="text-xs text-gray-400">{p.category.name}</p>
                   </div>
+                  {/* Badge rojo si está en 0, amarillo si tiene ≤5 */}
                   <span className={`text-xs font-bold px-3 py-1 rounded-full ${
                     p.stock === 0 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
                   }`}>
@@ -132,7 +169,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Recent sales */}
+        {/* Últimas 5 ventas (slice(0, 5) toma solo las primeras 5) */}
         {sales.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">

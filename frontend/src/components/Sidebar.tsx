@@ -1,29 +1,49 @@
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { PageId } from '../types';
+// ============================================================
+//  COMPONENTE SIDEBAR (components/Sidebar.tsx)
+//  Menú lateral de navegación con secciones accordion (desplegables).
+//  Cuando está expandido (isOpen=true) muestra texto completo.
+//  Cuando está colapsado (isOpen=false) muestra solo íconos.
+//
+//  Estructura del menú:
+//    - Sección Ventas (accordion): Punto de Venta, Facturación, Artículos, Stock
+//    - Sección Alquiler (accordion): Panel de Alquiler
+//    - Sección Servicios Técnicos (accordion): Panel de Servicios
+//    - Botón Configuración (siempre visible)
+//    - Info de usuario + botón Salir
+// ============================================================
 
+import { useState } from 'react';
+import { useAuth }  from '../context/AuthContext';
+import { PageId }   from '../types';
+
+// ── Tipos para el árbol de navegación ──────────────────────────
+
+/** NavLeaf: un ítem clickeable que navega a una página */
 interface NavLeaf {
-  kind: 'leaf';
-  id: PageId;
-  label: string;
-  indent?: boolean;
+  kind:     'leaf';
+  id:       PageId;   // ID de la página a navegar
+  label:    string;   // Texto del ítem
+  indent?:  boolean;  // Si tiene sangría extra (para sub-ítems como "Listado" bajo "Stock")
 }
 
+/** NavDivider: separador de texto (no clickeable), ej: "Stock" dentro de Ventas */
 interface NavDivider {
-  kind: 'divider';
+  kind:  'divider';
   label: string;
 }
 
 type NavEntry = NavLeaf | NavDivider;
 
+/** Sección accordion: agrupa varios NavEntry bajo un botón colapsable */
 interface Section {
-  key: string;
-  label: string;
-  defaultPage: PageId;
-  icon: JSX.Element;
-  entries: NavEntry[];
+  key:         string;    // Identificador único de la sección
+  label:       string;    // Texto del botón de sección
+  defaultPage: PageId;    // Página a navegar cuando el sidebar está colapsado (solo icono)
+  icon:        JSX.Element; // Ícono SVG de la sección
+  entries:     NavEntry[];  // Ítems dentro de la sección
 }
 
+// ── Definición del árbol de navegación ─────────────────────────
 const sections: Section[] = [
   {
     key: 'ventas',
@@ -35,11 +55,11 @@ const sections: Section[] = [
       </svg>
     ),
     entries: [
-      { kind: 'leaf', id: 'punto-de-venta', label: 'Punto de Venta' },
-      { kind: 'leaf', id: 'facturacion',    label: 'Facturación' },
-      { kind: 'leaf', id: 'articulos',      label: 'Artículos' },
-      { kind: 'divider', label: 'Stock' },
-      { kind: 'leaf', id: 'stock-listado',  label: 'Listado', indent: true },
+      { kind: 'leaf',    id: 'punto-de-venta', label: 'Punto de Venta' },
+      { kind: 'leaf',    id: 'facturacion',    label: 'Facturación' },
+      { kind: 'leaf',    id: 'articulos',      label: 'Artículos' },
+      { kind: 'divider', label: 'Stock' },                              // Separador visual
+      { kind: 'leaf',    id: 'stock-listado',  label: 'Listado', indent: true }, // Con sangría
     ],
   },
   {
@@ -70,64 +90,89 @@ const sections: Section[] = [
   },
 ];
 
+/** Props del Sidebar */
 interface Props {
-  isOpen: boolean;
-  currentPage: PageId;
-  onNavigate: (page: PageId) => void;
+  isOpen:     boolean;              // true = expandido (con texto), false = colapsado (solo íconos)
+  currentPage: PageId;              // Página activa para resaltar el ítem correspondiente
+  onNavigate: (page: PageId) => void; // Callback para cambiar de página
 }
 
 export default function Sidebar({ isOpen, currentPage, onNavigate }: Props) {
   const { user, logout } = useAuth();
+
+  // Estado de qué secciones están abiertas. Por defecto: "ventas" está abierta
   const [openSections, setOpenSections] = useState<string[]>(['ventas']);
 
+  /**
+   * toggleSection — Abre o cierra una sección accordion.
+   * Si la sección ya está en el array → la elimina (cierra).
+   * Si no está → la agrega (abre).
+   */
   const toggleSection = (key: string) =>
     setOpenSections(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+      prev.includes(key)
+        ? prev.filter(k => k !== key) // Cierra: quita del array
+        : [...prev, key]               // Abre: agrega al array
     );
 
+  /**
+   * isSectionActive — Determina si una sección contiene la página activa.
+   * Se usa para resaltar el ícono de la sección cuando el sidebar está colapsado.
+   * Busca entre los entries tipo 'leaf' de la sección si alguno coincide con currentPage.
+   */
   const isSectionActive = (section: Section) =>
     section.entries.some(e => e.kind === 'leaf' && e.id === currentPage);
 
   return (
     <aside
+      // Ancho dinámico: 256px expandido (w-64), 64px colapsado (w-16)
+      // transition-all hace la animación suave al cambiar de ancho
       className={`${isOpen ? 'w-64' : 'w-16'} transition-all duration-300 bg-gray-900 flex flex-col flex-shrink-0 overflow-hidden`}
     >
-      {/* Logo */}
+
+      {/* ── LOGO / HEADER ── */}
       <div className="h-14 flex items-center px-4 border-b border-gray-700 flex-shrink-0">
         <div className="flex items-center gap-3">
+          {/* Cuadrado "SH" siempre visible (con o sin texto) */}
           <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
             SH
           </div>
+          {/* Nombre de la empresa: solo visible cuando el sidebar está expandido */}
           {isOpen && (
             <span className="text-white font-semibold text-sm whitespace-nowrap">SH Servicios</span>
           )}
         </div>
       </div>
 
-      {/* Sections */}
+      {/* ── NAVEGACIÓN PRINCIPAL ── */}
       <nav className="flex-1 py-2 overflow-y-auto">
         {sections.map(section => {
-          const sectionOpen = openSections.includes(section.key);
+          const sectionOpen   = openSections.includes(section.key);
           const sectionActive = isSectionActive(section);
 
           return (
             <div key={section.key}>
-              {/* Section header */}
+
+              {/* Botón de sección (accordion header) */}
               <button
                 onClick={() =>
+                  // Si el sidebar está expandido → toggle accordion
+                  // Si está colapsado → navegar directamente a la página por defecto de la sección
                   isOpen ? toggleSection(section.key) : onNavigate(section.defaultPage)
                 }
-                title={!isOpen ? section.label : undefined}
+                title={!isOpen ? section.label : undefined} // Tooltip cuando está colapsado
                 className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors
                   ${sectionActive && !isOpen
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-blue-600 text-white'     // Resaltado cuando está colapsado y activo
                     : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   }`}
               >
                 <span className="flex-shrink-0">{section.icon}</span>
+                {/* Texto y flecha: solo visible cuando está expandido */}
                 {isOpen && (
                   <>
                     <span className="flex-1 text-sm font-semibold text-left">{section.label}</span>
+                    {/* Flecha que rota 180° cuando la sección está abierta */}
                     <svg
                       className={`w-4 h-4 flex-shrink-0 transition-transform ${sectionOpen ? 'rotate-180' : ''}`}
                       fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -138,10 +183,11 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }: Props) {
                 )}
               </button>
 
-              {/* Sub-items (accordion) */}
+              {/* Sub-ítems del accordion (solo visible si sidebar expandido Y sección abierta) */}
               {isOpen && sectionOpen && (
                 <div className="bg-gray-950 pb-1">
                   {section.entries.map((entry, i) => {
+                    // Si es un divider → renderizar como texto separador (no clickeable)
                     if (entry.kind === 'divider') {
                       return (
                         <p key={i} className="px-7 pt-2 pb-0.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -149,17 +195,19 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }: Props) {
                         </p>
                       );
                     }
+                    // Si es un leaf → renderizar como botón de navegación
                     return (
                       <button
                         key={entry.id}
                         onClick={() => onNavigate(entry.id)}
                         className={`w-full flex items-center gap-2 text-left py-2 text-sm transition-colors
-                          ${entry.indent ? 'pl-10 pr-4' : 'pl-7 pr-4'}
+                          ${entry.indent ? 'pl-10 pr-4' : 'pl-7 pr-4'}  // Sangría extra para sub-ítems
                           ${currentPage === entry.id
-                            ? 'text-blue-400 font-semibold bg-gray-800'
+                            ? 'text-blue-400 font-semibold bg-gray-800' // Ítem activo: resaltado en azul
                             : 'text-gray-400 hover:text-white hover:bg-gray-800'
                           }`}
                       >
+                        {/* Punto decorativo al inicio de cada ítem */}
                         <span className="w-1 h-1 rounded-full bg-current flex-shrink-0" />
                         {entry.label}
                       </button>
@@ -172,8 +220,10 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }: Props) {
         })}
       </nav>
 
-      {/* Bottom: Configuración + user + logout */}
+      {/* ── ZONA INFERIOR: Configuración + info de usuario + Salir ── */}
       <div className="border-t border-gray-700 flex-shrink-0">
+
+        {/* Botón de Configuración */}
         <button
           onClick={() => onNavigate('configuracion')}
           title={!isOpen ? 'Configuración' : undefined}
@@ -190,6 +240,7 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }: Props) {
           {isOpen && <span className="font-medium">Configuración</span>}
         </button>
 
+        {/* Info del usuario: email y badge de rol (solo cuando está expandido) */}
         {isOpen && user && (
           <div className="px-4 py-2 border-t border-gray-800">
             <p className="text-white text-xs font-medium truncate">{user.email}</p>
@@ -201,6 +252,7 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }: Props) {
           </div>
         )}
 
+        {/* Botón de logout: llama a logout() del AuthContext → limpia localStorage */}
         <button
           onClick={logout}
           title={!isOpen ? 'Salir' : undefined}

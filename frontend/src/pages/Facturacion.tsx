@@ -1,12 +1,27 @@
+// ============================================================
+//  PÁGINA: FACTURACIÓN (pages/Facturacion.tsx)
+//  Muestra el historial completo de ventas con métricas resumidas
+//  y la posibilidad de expandir cada venta para ver su detalle.
+//
+//  Funcionalidades:
+//    - Tarjetas resumen: total de ventas, total facturado, ticket promedio
+//    - Tabla de ventas con número de factura, fecha, usuario, ítems y total
+//    - Fila expandible con el detalle de cada producto vendido
+// ============================================================
+
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Sale } from '../types';
 
 export default function Facturacion() {
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [expandedSale, setExpandedSale] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [sales,         setSales]         = useState<Sale[]>([]);
+  const [expandedSale,  setExpandedSale]  = useState<number | null>(null); // ID de la venta expandida
+  const [loading,       setLoading]       = useState(true);
 
+  /**
+   * fetchSales — Carga el historial de ventas desde el backend.
+   * useCallback evita recrear la función en cada render (buena práctica con useEffect).
+   */
   const fetchSales = useCallback(async () => {
     const { data } = await api.get('/sales');
     setSales(data);
@@ -15,6 +30,7 @@ export default function Facturacion() {
 
   useEffect(() => { fetchSales(); }, [fetchSales]);
 
+  // Suma de todos los totales para mostrar en la tarjeta "Total facturado"
   const totalFacturado = sales.reduce((sum, s) => sum + s.total, 0);
 
   if (loading) {
@@ -24,16 +40,23 @@ export default function Facturacion() {
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="space-y-4">
-        {/* Summary bar */}
+
+        {/* ── TARJETAS RESUMEN ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+          {/* Cantidad total de ventas registradas */}
           <div className="bg-white rounded-xl shadow-sm p-4">
             <p className="text-sm text-gray-500">Total ventas</p>
             <p className="text-2xl font-bold text-gray-900 mt-0.5">{sales.length}</p>
           </div>
+
+          {/* Suma de todos los montos */}
           <div className="bg-white rounded-xl shadow-sm p-4">
             <p className="text-sm text-gray-500">Total facturado</p>
             <p className="text-2xl font-bold text-green-600 mt-0.5">${totalFacturado.toLocaleString('es-AR')}</p>
           </div>
+
+          {/* Promedio por venta: totalFacturado / cantidad de ventas */}
           <div className="bg-white rounded-xl shadow-sm p-4">
             <p className="text-sm text-gray-500">Ticket promedio</p>
             <p className="text-2xl font-bold text-gray-900 mt-0.5">
@@ -42,7 +65,7 @@ export default function Facturacion() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* ── TABLA DE VENTAS ── */}
         {sales.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-16 text-center text-gray-400">
             <p className="font-medium">No hay ventas registradas</p>
@@ -62,9 +85,17 @@ export default function Facturacion() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {sales.map(s => (
+                  // React.Fragment permite agrupar la fila principal + la fila de detalle
+                  // sin agregar un div extra al DOM
                   <React.Fragment key={s.id}>
+
+                    {/* Fila principal de cada venta */}
                     <tr className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3.5 font-semibold text-gray-700">#{String(s.id).padStart(4, '0')}</td>
+                      {/* Número de venta formateado con ceros a la izquierda: #0001 */}
+                      <td className="px-5 py-3.5 font-semibold text-gray-700">
+                        #{String(s.id).padStart(4, '0')}
+                      </td>
+                      {/* Fecha formateada en formato argentino: DD/MM/AAAA HH:MM */}
                       <td className="px-5 py-3.5 text-gray-600">
                         {new Date(s.createdAt).toLocaleDateString('es-AR', {
                           day: '2-digit', month: '2-digit', year: 'numeric',
@@ -77,6 +108,7 @@ export default function Facturacion() {
                         ${s.total.toLocaleString('es-AR')}
                       </td>
                       <td className="px-5 py-3.5 text-right">
+                        {/* Toggle: muestra/oculta el detalle de la venta */}
                         <button
                           onClick={() => setExpandedSale(expandedSale === s.id ? null : s.id)}
                           className="text-xs text-blue-600 hover:underline font-medium"
@@ -85,24 +117,30 @@ export default function Facturacion() {
                         </button>
                       </td>
                     </tr>
+
+                    {/* Fila de detalle expandida (solo visible si expandedSale === s.id) */}
                     {expandedSale === s.id && (
                       <tr>
+                        {/* colSpan=6 hace que la celda ocupe todas las columnas */}
                         <td colSpan={6} className="px-5 py-3 bg-blue-50 border-b border-blue-100">
                           <p className="text-xs font-bold text-blue-700 mb-2 uppercase tracking-wide">
                             Detalle — Venta #{String(s.id).padStart(4, '0')}
                           </p>
                           <div className="space-y-1.5">
+                            {/* Lista de productos de esta venta */}
                             {s.details.map(d => (
                               <div key={d.id} className="flex justify-between text-sm">
                                 <span className="text-gray-700">
                                   {d.product.name}
                                   <span className="text-gray-400 ml-1">× {d.quantity}</span>
                                 </span>
+                                {/* Total por línea = precio histórico × cantidad */}
                                 <span className="font-medium text-gray-800">
                                   ${(d.unitPrice * d.quantity).toLocaleString('es-AR')}
                                 </span>
                               </div>
                             ))}
+                            {/* Total de la venta al pie */}
                             <div className="pt-1.5 border-t border-blue-200 flex justify-between font-semibold text-sm">
                               <span>Total</span>
                               <span>${s.total.toLocaleString('es-AR')}</span>
