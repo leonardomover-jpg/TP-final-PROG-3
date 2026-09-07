@@ -10,6 +10,16 @@ backend/prisma/migrations/
 frontend/node_modules/
 frontend/dist/
 
+# peluqueria-saas (proyecto SaaS separado)
+peluqueria-saas/backend/node_modules/
+peluqueria-saas/backend/dist/
+peluqueria-saas/backend/.env
+peluqueria-saas/backend/prisma/dev.db
+peluqueria-saas/backend/prisma/dev.db-journal
+peluqueria-saas/backend/prisma/migrations/
+peluqueria-saas/frontend/node_modules/
+peluqueria-saas/frontend/dist/
+
 # General
 .DS_Store
 *.log
