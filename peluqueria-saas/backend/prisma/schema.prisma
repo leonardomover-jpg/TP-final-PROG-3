@@ -1,16 +1,16 @@
-// Schema fundacional — Etapa 1 (Análisis y Arquitectura).
-// Cubre únicamente: Tenant, Branch, User, Role/Permission (RBAC),
+// Schema fundacional — Etapa 1 (Análisis y Arquitectura) + Etapa 2 (Auth/RBAC).
+// Cubre: Tenant, Branch, User, Role/Permission (RBAC), RefreshToken,
 // PlatformAdmin (SUPER ADMIN), Plan, FeatureFlag, Subscription, AuditLog.
 //
 // Diseño detallado y justificación de cada decisión en:
 //   ../../docs/02-MULTI-TENANCY-Y-BASE-DE-DATOS.md
 //   ../../docs/03-PLANES-FEATURE-FLAGS-SUSCRIPCIONES.md
+//   ../../docs/04-SEGURIDAD-BASELINE.md (sección 1: refresh tokens revocables)
 //
 // Los módulos de negocio (Client, Service, Professional, Appointment,
 // Product, Sale, CashRegister, etc.) se agregan en sus propias etapas,
 // siguiendo el mismo patrón: tenantId obligatorio + índice compuesto +
-// soft delete donde aplique. No se implementa código de negocio en esta
-// etapa — este archivo es diseño de datos, no una app funcional todavía.
+// soft delete donde aplique.
 
 generator client {
   provider = "prisma-client-js"
@@ -106,11 +106,24 @@ model User {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  branches UserBranch[]
-  roles    UserRole[]
+  branches      UserBranch[]
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model UserBranch {

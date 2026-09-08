@@ -31,9 +31,16 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       dependencias, arquitectura, stack, estrategia multi-tenant, schema
       fundacional (Tenant/Branch/User/Role/Permission/Plan/FeatureFlag/
       Subscription/AuditLog), seguridad baseline, riesgos detectados.
-- [ ] **Etapa 2 — Autenticación + Usuarios + RBAC + Multi-tenancy (código)**:
-      implementación real de login/refresh/MFA, guards de tenant y permisos,
-      CRUD de usuarios y roles, tests de aislamiento entre tenants (IDOR).
+- [x] **Etapa 2 — Autenticación + Usuarios + RBAC + Multi-tenancy (código)**:
+      backend NestJS + Prisma real (`peluqueria-saas/backend`). Login/refresh
+      con rotación y revocación, `TenantPrismaService` (Prisma Client
+      Extension) como único punto de filtrado por tenant, `PermissionsGuard`
+      con resolución fresca por request, CRUD de usuarios/roles/sucursales,
+      seed de permisos y roles de sistema, y 21 tests automatizados pasando
+      contra PostgreSQL real — incluyendo el test de aislamiento entre
+      tenants (IDOR) exigido por el punto 73 del pedido. MFA para
+      PlatformAdmin queda pendiente para la Etapa 3 (junto con el propio
+      panel de SUPER ADMIN).
 - [ ] **Etapa 3 — SUPER ADMIN (panel y API separados)**: CRUD de negocios,
       suspender/reactivar, búsqueda/filtro, auditoría y logs visibles,
       comunicaciones globales, soporte (tickets) básico.

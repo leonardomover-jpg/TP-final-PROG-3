@@ -8,24 +8,38 @@ Este directorio es un **proyecto nuevo e independiente** del Stock Manager
 (TIF de PROG-3) que vive en `../backend` y `../frontend` en la raíz del
 repositorio — no comparten código, base de datos ni dependencias.
 
-## Estado actual: Etapa 1 — Análisis y Arquitectura
+## Estado actual
 
-Siguiendo la metodología por etapas definida por el cliente (no se genera
-código de negocio de una sola vez), esta primera entrega cubre **solo**:
+- ✅ **Etapa 1 — Análisis y Arquitectura**: módulos, dependencias,
+  arquitectura, stack, estrategia multi-tenant, schema fundacional, seguridad
+  baseline, riesgos detectados.
+- ✅ **Etapa 2 — Autenticación + Usuarios + RBAC + Multi-tenancy (código real)**:
+  backend NestJS + Prisma funcionando de punta a punta, con 21 tests
+  automatizados pasando contra PostgreSQL real (`backend/test/`), incluyendo
+  el test más crítico del sistema: **Tenant A no puede leer/editar/eliminar
+  nada de Tenant B**, ni siquiera por ID directo (IDOR).
 
-1. Análisis de módulos y sus dependencias.
-2. Arquitectura general del sistema.
-3. Estrategia de multi-tenancy.
-4. Diseño de base de datos **fundacional** (tenants, usuarios, roles y
-   permisos, planes, feature flags, suscripciones, auditoría) — el resto de
-   los módulos de negocio (clientes, turnos, ventas, inventario, etc.) se
-   diseñarán en las etapas siguientes, en el orden definido en
-   [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
-5. Riesgos y funcionalidades detectadas que no estaban explícitas en el
-   pedido original.
+Implementado en Etapa 2:
 
-No hay código de controllers/servicios de negocio todavía — solo el
-`schema.prisma` fundacional (diseño de datos) en `backend/prisma/schema.prisma`.
+- Registro de negocio (`POST /auth/register-tenant`): crea tenant, sucursal
+  principal y usuario admin en una transacción.
+- Login por tenant + email + password (Argon2id), JWT access (15 min) +
+  refresh (7 días) con **rotación y revocación real** (tabla `RefreshToken`).
+- Aislamiento multi-tenant en la capa de datos: `TenantPrismaService`
+  (Prisma Client Extension) filtra automáticamente por `tenant_id` en todo
+  find/update/delete/create — ningún service arma ese filtro a mano.
+- RBAC completo: catálogo de permisos, roles de sistema (Administrador,
+  Recepcionista, Profesional) + roles propios por negocio, `PermissionsGuard`
+  que resuelve permisos frescos en cada request (un cambio de rol aplica sin
+  esperar a que expire el token).
+- CRUD de Usuarios, Roles y Sucursales, todo tenant-scoped y con soft delete.
+- Seed idempotente de permisos y roles de sistema (`npm run prisma:seed`).
+
+Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
+
+El resto de los módulos de negocio (clientes, turnos, ventas, inventario,
+etc.) se implementan en las etapas siguientes, en el orden definido en
+[`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
 
 ## Documentos
 
@@ -52,6 +66,5 @@ No hay código de controllers/servicios de negocio todavía — solo el
 
 ## Próximo paso
 
-Continuar con la Etapa 2 del roadmap: Autenticación + Usuarios + RBAC +
-Multi-tenancy (implementación de código sobre el schema fundacional ya
-diseñado), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 3 del roadmap: SUPER ADMIN (panel y API separados del
+panel de negocio), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
