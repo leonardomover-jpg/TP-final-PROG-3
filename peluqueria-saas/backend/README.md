@@ -1,11 +1,11 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 6)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 7)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
 completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
 límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
-Pago — billing real de la plataforma (Etapa 5), y Clientes/CRM — el primer
-módulo de negocio (Etapa 6). Ver `../docs/` para el diseño completo
+Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6) y
+Profesionales (Etapa 7). Ver `../docs/` para el diseño completo
 (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
@@ -140,6 +140,26 @@ curl -X DELETE http://localhost:3000/api/v1/clients/<clientId> \
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Profesionales
+
+```bash
+# 1) Crear un profesional (especialidades como tags, comisión opcional)
+curl -X POST http://localhost:3000/api/v1/professionals \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Carla","lastName":"Ruiz","specialties":["corte","color"],"commissionPercentage":15}'
+
+# 2) Definir su horario semanal (reemplaza el horario completo)
+curl -X PUT http://localhost:3000/api/v1/professionals/<professionalId>/schedule \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"entries":[{"dayOfWeek":1,"startTime":"09:00","endTime":"18:00"}]}'
+
+# 3) Ver la ficha completa (datos + horario)
+curl http://localhost:3000/api/v1/professionals/<professionalId> \
+  -H "Authorization: Bearer <accessToken del negocio>"
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -174,6 +194,7 @@ src/
 ├── permissions/                 # catálogo global de permisos (solo lectura)
 ├── branches/                     # CRUD de sucursales (PlanLimitsGuard)
 ├── clients/                        # CRUD de clientes (CRM), notas internas, ficha (PlanLimitsGuard)
+├── professionals/                   # CRUD de profesionales, horario semanal propio, vínculo a User
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
 ├── plan-limits/                     # PlanLimitsService + PlanLimitsGuard (límites de plan)
@@ -210,6 +231,7 @@ test/
 ├── plan-limits.spec.ts                           # límites de plan aplicados de verdad
 ├── subscriptions.spec.ts                          # checkout mockeado, firma de webhook, idempotencia
 ├── clients.spec.ts                                 # CRUD, notas internas, aislamiento, límite de plan
+├── professionals.spec.ts                           # CRUD, horario, vínculo a User, aislamiento, límite de plan
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

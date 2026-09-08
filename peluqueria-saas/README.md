@@ -33,8 +33,12 @@ repositorio — no comparten código, base de datos ni dependencias.
   CRUD completo tenant-scoped, notas internas con autor y fecha, ficha con
   placeholder de historial (Turnos/Ventas/Puntos se completan en etapas
   futuras), límite de plan por cantidad de clientes aplicado de verdad.
+- ✅ **Etapa 7 — Profesionales**: CRUD completo tenant-scoped, especialidades
+  (tags), comisión, horario semanal propio reemplazable, vínculo opcional
+  1:1 a un usuario del sistema, límite de plan por cantidad de
+  profesionales.
 
-59 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+65 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -120,10 +124,27 @@ Implementado en Etapa 6 (detalle completo en
 - Límite de plan por cantidad de clientes (`maxClients`) aplicado de verdad
   vía `PlanLimitsGuard` — el `switch` ya estaba preparado desde la Etapa 4.
 
+Implementado en Etapa 7 (detalle completo en
+[`docs/11-PROFESIONALES.md`](docs/11-PROFESIONALES.md)):
+
+- CRUD completo de profesionales (`GET/POST/PATCH/DELETE /professionals`),
+  tenant-scoped igual que Clientes/Usuarios/Sucursales.
+- Especialidades como tags libres (el catálogo formal de "profesionales
+  habilitados por servicio" es de la Etapa 8) y comisión configurable (% de
+  configuración; el cálculo real sobre ventas es de la Etapa 12).
+- Horario semanal propio (`PUT /professionals/:id/schedule`, reemplazo
+  completo) — el motor de disponibilidad con excepciones y feriados
+  argentinos es de la Etapa 9, que se apoya en esta misma tabla.
+- Vínculo opcional 1:1 a un `User` del sistema: un profesional puede no
+  tener login propio, y viceversa.
+- Límite de plan por cantidad de profesionales (`maxProfessionals`)
+  aplicado de verdad, usando un campo del schema que existía desde la
+  Etapa 1 sin ningún endpoint que lo usara hasta ahora.
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
-El resto de los módulos de negocio (turnos, ventas, inventario, etc.) se
-implementan en las etapas siguientes, en el orden definido en
+El resto de los módulos de negocio (servicios, turnos, ventas, inventario,
+etc.) se implementan en las etapas siguientes, en el orden definido en
 [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
 
 ## Documentos
@@ -140,6 +161,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md`](docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md) | Etapa 4: FeatureFlagsService, FeatureFlagGuard, PlanLimitsGuard, gestión de planes/flags |
 | [`docs/09-SUSCRIPCIONES-MERCADO-PAGO.md`](docs/09-SUSCRIPCIONES-MERCADO-PAGO.md) | Etapa 5: MercadoPagoService, checkout, webhook idempotente, trial, vencimientos |
 | [`docs/10-CLIENTES.md`](docs/10-CLIENTES.md) | Etapa 6: modelo Client/ClientNote, CRUD, notas internas, ficha con historial placeholder, límite de plan |
+| [`docs/11-PROFESIONALES.md`](docs/11-PROFESIONALES.md) | Etapa 7: modelo Professional/ProfessionalSchedule, CRUD, horario semanal propio, vínculo opcional a User, límite de plan |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -155,6 +177,6 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 7 del roadmap: Profesionales — alta/edición,
-especialidades, horarios propios, comisión, vínculo opcional a `User`,
-según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 8 del roadmap: Servicios — alta/edición,
+categorías, duración/precio, profesionales habilitados, según el detalle
+de `docs/06-ROADMAP-ETAPAS.md`.

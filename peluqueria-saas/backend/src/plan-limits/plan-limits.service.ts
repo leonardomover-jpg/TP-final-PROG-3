@@ -7,6 +7,7 @@ const RESOURCE_LABELS: Record<LimitableResource, string> = {
   users: 'usuarios',
   branches: 'sucursales',
   clients: 'clientes',
+  professionals: 'profesionales',
 };
 
 /**
@@ -28,6 +29,8 @@ export class PlanLimitsService {
         return plan.maxBranches;
       case 'clients':
         return plan.maxClients;
+      case 'professionals':
+        return plan.maxProfessionals;
     }
   }
 
@@ -39,6 +42,8 @@ export class PlanLimitsService {
         return this.prisma.branch.count({ where: { tenantId, deletedAt: null } });
       case 'clients':
         return this.prisma.client.count({ where: { tenantId, deletedAt: null } });
+      case 'professionals':
+        return this.prisma.professional.count({ where: { tenantId, deletedAt: null } });
     }
   }
 
@@ -55,7 +60,7 @@ export class PlanLimitsService {
   }
 
   async getAllUsage(tenantId: string): Promise<PlanLimitUsage[]> {
-    const resources: LimitableResource[] = ['users', 'branches', 'clients'];
+    const resources: LimitableResource[] = ['users', 'branches', 'clients', 'professionals'];
     return Promise.all(resources.map((resource) => this.getUsage(tenantId, resource)));
   }
 

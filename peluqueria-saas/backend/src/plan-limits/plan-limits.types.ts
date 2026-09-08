@@ -1,9 +1,5 @@
-// Recursos limitables por plan (doc 05-OBSERVACIONES-Y-RIESGOS §2). Solo se
-// cuentan acá los que ya tienen tabla propia — 'professionals' se agrega
-// cuando exista ese módulo (Etapa 7), sin tocar nada de esto: el switch de
-// PlanLimitsService.countCurrentUsage ya está preparado para sumar un case
-// más.
-export type LimitableResource = 'users' | 'branches' | 'clients';
+// Recursos limitables por plan (doc 05-OBSERVACIONES-Y-RIESGOS §2).
+export type LimitableResource = 'users' | 'branches' | 'clients' | 'professionals';
 
 export interface PlanLimitUsage {
   resource: LimitableResource;

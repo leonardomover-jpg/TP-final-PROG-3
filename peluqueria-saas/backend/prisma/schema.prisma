@@ -58,6 +58,7 @@ model Tenant {
   supportTickets       SupportTicket[]
   communicationTenants CommunicationTenant[]
   clients              Client[]
+  professionals        Professional[]
 
   @@index([status])
 }
@@ -131,6 +132,7 @@ model User {
   branches      UserBranch[]
   roles         UserRole[]
   refreshTokens RefreshToken[]
+  professional  Professional?
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -337,6 +339,57 @@ model ClientNote {
   createdAt DateTime @default(now())
 
   @@index([clientId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PROFESIONALES (Etapa 7)
+// ─────────────────────────────────────────────────────────────────────────
+
+// El vínculo a User es OPCIONAL a propósito (punto de la Etapa 7 del
+// roadmap: "vínculo opcional a User"): un profesional puede ser alguien
+// que factura/trabaja en el negocio sin tener acceso al sistema (sin
+// login propio), y viceversa, un User (ej. el dueño) no necesariamente es
+// un profesional que atiende clientes. Cuando SÍ está vinculado, es 1:1
+// (@unique en userId) — un profesional no puede "ser" dos Users distintos,
+// y un User no puede tener dos fichas de profesional.
+model Professional {
+  id                   String    @id @default(cuid())
+  tenantId             String
+  tenant               Tenant    @relation(fields: [tenantId], references: [id])
+  userId               String?   @unique
+  user                 User?     @relation(fields: [userId], references: [id])
+  firstName            String
+  lastName             String
+  phone                String?
+  email                String?
+  specialties          String[] // tags libres (ej. "corte", "color", "barba") — el catálogo
+  // formal de Servicios y "profesionales habilitados por servicio" es de la Etapa 8.
+  commissionPercentage Decimal?  @db.Decimal(5, 2) // % sobre venta/servicio, null = sin comisión configurada
+  status               String    @default("active") // active | inactive
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+
+  schedules ProfessionalSchedule[]
+
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+}
+
+// Horario semanal recurrente PROPIO del profesional (punto "horarios
+// propios" de la Etapa 7). Deliberadamente simple: un rango por día de la
+// semana, sin excepciones ni feriados — eso es el motor de disponibilidad
+// completo de la Etapa 9 (horario del negocio, excepciones, feriados
+// argentinos), que va a combinarse con esta tabla, no reemplazarla.
+model ProfessionalSchedule {
+  id             String       @id @default(cuid())
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  dayOfWeek      Int // 0 = domingo … 6 = sábado (getDay() de JS)
+  startTime      String // "HH:mm", 24hs
+  endTime        String // "HH:mm", 24hs
+
+  @@index([professionalId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────

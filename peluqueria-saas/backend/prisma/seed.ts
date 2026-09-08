@@ -32,6 +32,11 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
   { key: 'clientes.editar', module: 'clientes', description: 'Editar clientes' },
   { key: 'clientes.eliminar', module: 'clientes', description: 'Eliminar clientes' },
 
+  { key: 'profesionales.ver', module: 'profesionales', description: 'Ver profesionales' },
+  { key: 'profesionales.crear', module: 'profesionales', description: 'Crear profesionales' },
+  { key: 'profesionales.editar', module: 'profesionales', description: 'Editar profesionales (incluye horarios)' },
+  { key: 'profesionales.eliminar', module: 'profesionales', description: 'Eliminar profesionales' },
+
   { key: 'turnos.ver', module: 'turnos', description: 'Ver turnos' },
   { key: 'turnos.crear', module: 'turnos', description: 'Crear turnos' },
   { key: 'turnos.editar', module: 'turnos', description: 'Editar turnos' },
@@ -134,6 +139,7 @@ const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
       'clientes.ver',
       'clientes.crear',
       'clientes.editar',
+      'profesionales.ver',
       'turnos.ver',
       'turnos.crear',
       'turnos.editar',
@@ -147,7 +153,7 @@ const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
   },
   {
     name: 'Profesional',
-    permissionKeys: ['turnos.ver', 'turnos.editar', 'clientes.ver'],
+    permissionKeys: ['turnos.ver', 'turnos.editar', 'clientes.ver', 'profesionales.ver'],
   },
 ];
 

@@ -85,8 +85,17 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       (Turnos/Ventas/Puntos se agregan cuando existan esas etapas), soft
       delete conserva el historial. 59 tests en la suite completa (6
       nuevos). Detalle en `docs/10-CLIENTES.md`.
-- [ ] **Etapa 7 — Profesionales**: alta/edición, especialidades, horarios
-      propios, comisión, vínculo opcional a `User`.
+- [x] **Etapa 7 — Profesionales**: modelo `Professional`/
+      `ProfessionalSchedule` tenant-scoped, CRUD completo (permisos nuevos
+      `profesionales.ver/crear/editar/eliminar`), especialidades como tags
+      libres (el catálogo formal es de la Etapa 8), horario semanal propio
+      reemplazable por `PUT .../schedule` (el motor de disponibilidad con
+      excepciones/feriados es de la Etapa 9), comisión (% de configuración,
+      el cálculo real es de la Etapa 12), vínculo opcional 1:1 a `User`,
+      `PlanLimitsGuard` con `@LimitResource('professionals')` (usando
+      `Plan.maxProfessionals`, en el schema desde la Etapa 1 sin uso hasta
+      ahora). 65 tests en la suite completa (6 nuevos). Detalle en
+      `docs/11-PROFESIONALES.md`.
 - [ ] **Etapa 8 — Servicios**: alta/edición, categorías, duración/precio,
       profesionales habilitados.
 - [ ] **Etapa 9 — Horarios**: horario del negocio, horario por profesional,
@@ -126,6 +135,6 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 7 del roadmap: Profesionales — alta/edición,
-especialidades, horarios propios, comisión, vínculo opcional a `User`
-(según el detalle de más arriba).
+Continuar con la Etapa 8 del roadmap: Servicios — alta/edición,
+categorías, duración/precio, profesionales habilitados (según el detalle
+de más arriba).
