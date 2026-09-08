@@ -17,14 +17,20 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   // Corre en cada request autenticado. Se vuelve a chequear contra la base
   // (no se confía ciegamente en el payload firmado) para que suspender o
   // borrar un usuario corte el acceso sin esperar a que expire el access
-  // token — doc 04-SEGURIDAD-BASELINE §1.
+  // token — doc 04-SEGURIDAD-BASELINE §1. También se revalida el tenant: si
+  // SUPER ADMIN suspende/cancela el negocio (Etapa 3), ningún usuario de ese
+  // tenant sigue teniendo acceso con un token ya emitido.
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { tenant: true },
+    });
     if (
       !user ||
       user.deletedAt ||
       user.status !== 'active' ||
-      user.tenantId !== payload.tenantId
+      user.tenantId !== payload.tenantId ||
+      user.tenant.status !== 'active'
     ) {
       throw new UnauthorizedException('Sesión inválida.');
     }

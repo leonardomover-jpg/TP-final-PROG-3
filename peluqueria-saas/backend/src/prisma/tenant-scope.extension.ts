@@ -8,9 +8,9 @@ import { Prisma, PrismaClient } from '@prisma/client';
  * automáticamente acotado al tenant resuelto desde el JWT de la sesión.
  *
  * Reglas por modelo (documentadas porque no son todas iguales):
- * - User / Branch / Subscription / TenantFeatureFlag / AuditLog: igualdad
- *   estricta de tenantId en todas las operaciones. Un tenant nunca ve ni
- *   escribe filas de otro tenant, punto.
+ * - User / Branch / Subscription / TenantFeatureFlag / AuditLog / SupportTicket:
+ *   igualdad estricta de tenantId en todas las operaciones. Un tenant nunca
+ *   ve ni escribe filas de otro tenant, punto.
  * - Role: puede ser un rol de sistema (tenantId null, compartido y de solo
  *   lectura entre tenants) o un rol propio del tenant. Las lecturas
  *   (findMany/findFirst/count) devuelven "propios del tenant" OR "de
@@ -125,6 +125,24 @@ export function tenantScopeExtension(tenantId: string) {
         auditLog: {
           async findMany({ args, query }) {
             args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async create({ args, query }) {
+            args.data = { ...args.data, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
+        },
+        supportTicket: {
+          async findMany({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findFirst({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findUnique({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
             return query(args);
           },
           async create({ args, query }) {

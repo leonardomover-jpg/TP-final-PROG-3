@@ -14,10 +14,15 @@ repositorio — no comparten código, base de datos ni dependencias.
   arquitectura, stack, estrategia multi-tenant, schema fundacional, seguridad
   baseline, riesgos detectados.
 - ✅ **Etapa 2 — Autenticación + Usuarios + RBAC + Multi-tenancy (código real)**:
-  backend NestJS + Prisma funcionando de punta a punta, con 21 tests
-  automatizados pasando contra PostgreSQL real (`backend/test/`), incluyendo
-  el test más crítico del sistema: **Tenant A no puede leer/editar/eliminar
-  nada de Tenant B**, ni siquiera por ID directo (IDOR).
+  backend NestJS + Prisma funcionando de punta a punta, incluyendo el test
+  más crítico del sistema: **Tenant A no puede leer/editar/eliminar nada de
+  Tenant B**, ni siquiera por ID directo (IDOR).
+- ✅ **Etapa 3 — SUPER ADMIN (panel y API separados)**: dominio de auth
+  totalmente distinto del de negocio, con MFA (TOTP) obligatorio, gestión de
+  negocios (alta/búsqueda/suspender/reactivar/cancelar), auditoría global,
+  soporte y comunicaciones globales.
+
+39 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -35,6 +40,23 @@ Implementado en Etapa 2:
 - CRUD de Usuarios, Roles y Sucursales, todo tenant-scoped y con soft delete.
 - Seed idempotente de permisos y roles de sistema (`npm run prisma:seed`).
 
+Implementado en Etapa 3 (detalle completo en
+[`docs/07-SUPER-ADMIN.md`](docs/07-SUPER-ADMIN.md)):
+
+- `PlatformAdmin`: secretos JWT y estrategia passport propios, MFA (TOTP)
+  obligatorio en dos pasos, bloqueo de cuenta tras 5 intentos fallidos, rate
+  limiting global (`@nestjs/throttler`) — un token de negocio y uno de SUPER
+  ADMIN nunca sirven en el panel del otro.
+- Gestión de negocios: alta administrativa (sin autoregistro), búsqueda/
+  filtro paginado, suspender/reactivar/cancelar con **efecto inmediato**
+  sobre sesiones ya activas de ese negocio.
+- Auditoría global paginada (misma tabla `AuditLog` de la Etapa 1).
+- Soporte: tickets tenant-scoped del lado negocio, visibles entre todos los
+  negocios del lado SUPER ADMIN (asignar/responder/cambiar estado).
+- Comunicaciones globales: creación + listado, con 3 tipos de audiencia
+  (todos / un plan / negocios puntuales) — el consumo del lado negocio
+  queda para la Etapa 14 (Notificaciones).
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
 El resto de los módulos de negocio (clientes, turnos, ventas, inventario,
@@ -51,6 +73,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 | [`docs/04-SEGURIDAD-BASELINE.md`](docs/04-SEGURIDAD-BASELINE.md) | Principios de seguridad transversales que todo módulo futuro debe cumplir |
 | [`docs/05-OBSERVACIONES-Y-RIESGOS.md`](docs/05-OBSERVACIONES-Y-RIESGOS.md) | Funcionalidades/decisiones no explícitas en el pedido original, señaladas antes de implementar |
 | [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md) | Orden de las próximas etapas y checklist de revisión por etapa |
+| [`docs/07-SUPER-ADMIN.md`](docs/07-SUPER-ADMIN.md) | Etapa 3: separación de dominios de auth, MFA obligatorio, gestión de negocios, soporte, comunicaciones |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -66,5 +89,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 3 del roadmap: SUPER ADMIN (panel y API separados del
-panel de negocio), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 4 del roadmap: Planes y Feature Flags (código real
+sobre el modelo ya diseñado en la Etapa 1 — `PlanService`,
+`FeatureFlagService`, `FeatureFlagGuard`, `PlanLimitsGuard`), según el
+detalle de `docs/06-ROADMAP-ETAPAS.md`.

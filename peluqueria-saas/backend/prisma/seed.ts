@@ -1,7 +1,9 @@
 // Seed de plataforma: catálogo global de permisos + roles de sistema
-// predefinidos (doc 02-MULTI-TENANCY §6.4, doc 06-ROADMAP Etapa 2 §7).
+// predefinidos (doc 02-MULTI-TENANCY §6.4, doc 06-ROADMAP Etapa 2 §7) +
+// bootstrap del primer PlatformAdmin (Etapa 3, doc 07-SUPER-ADMIN).
 // Idempotente: se puede correr varias veces sin duplicar nada.
 import { PrismaClient } from '@prisma/client';
+import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
@@ -48,6 +50,9 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
 
   { key: 'productos.gestionar', module: 'productos', description: 'Gestionar productos' },
   { key: 'inventario.gestionar', module: 'inventario', description: 'Gestionar inventario' },
+
+  { key: 'soporte.ver', module: 'soporte', description: 'Ver tickets de soporte del negocio' },
+  { key: 'soporte.crear', module: 'soporte', description: 'Crear tickets de soporte' },
 ];
 
 const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
@@ -69,6 +74,8 @@ const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
       'ventas.ver',
       'ventas.crear',
       'caja.ver',
+      'soporte.ver',
+      'soporte.crear',
     ],
   },
   {
@@ -107,6 +114,29 @@ async function main() {
 
   for (const role of SYSTEM_ROLES) {
     await upsertSystemRole(role.name, idsForKeys(role.permissionKeys));
+  }
+
+  // Bootstrap del primer SUPER ADMIN. No hay endpoint público de alta de
+  // PlatformAdmin (sería un agujero de seguridad — punto 8 del pedido): la
+  // única forma de crear el primero es este seed, leyendo credenciales de
+  // variables de entorno. mfaEnabled queda en false a propósito: el primer
+  // login exige completar el enrolamiento de MFA (ver
+  // platform-admin-auth.service.ts) antes de poder hacer nada.
+  const bootstrapEmail = process.env.SUPER_ADMIN_BOOTSTRAP_EMAIL;
+  const bootstrapPassword = process.env.SUPER_ADMIN_BOOTSTRAP_PASSWORD;
+  if (bootstrapEmail && bootstrapPassword) {
+    const existingAdmin = await prisma.platformAdmin.findUnique({ where: { email: bootstrapEmail } });
+    if (!existingAdmin) {
+      const passwordHash = await argon2.hash(bootstrapPassword);
+      await prisma.platformAdmin.create({ data: { email: bootstrapEmail, passwordHash } });
+      console.log(`SUPER ADMIN creado: ${bootstrapEmail} (falta completar enrolamiento de MFA en el primer login)`);
+    } else {
+      console.log(`SUPER ADMIN ${bootstrapEmail} ya existía, no se modificó.`);
+    }
+  } else {
+    console.log(
+      'SUPER_ADMIN_BOOTSTRAP_EMAIL / SUPER_ADMIN_BOOTSTRAP_PASSWORD no están seteadas: no se creó ningún PlatformAdmin.',
+    );
   }
 
   console.log(`Seed OK: ${allPermissions.length} permisos, ${SYSTEM_ROLES.length} roles de sistema.`);

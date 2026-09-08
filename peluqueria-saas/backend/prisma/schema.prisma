@@ -1,11 +1,14 @@
-// Schema fundacional — Etapa 1 (Análisis y Arquitectura) + Etapa 2 (Auth/RBAC).
+// Schema fundacional — Etapa 1 (Análisis y Arquitectura) + Etapa 2 (Auth/RBAC)
+// + Etapa 3 (SUPER ADMIN).
 // Cubre: Tenant, Branch, User, Role/Permission (RBAC), RefreshToken,
-// PlatformAdmin (SUPER ADMIN), Plan, FeatureFlag, Subscription, AuditLog.
+// PlatformAdmin (SUPER ADMIN) + PlatformRefreshToken, Plan, FeatureFlag,
+// Subscription, AuditLog, SupportTicket(+Message), Communication.
 //
 // Diseño detallado y justificación de cada decisión en:
 //   ../../docs/02-MULTI-TENANCY-Y-BASE-DE-DATOS.md
 //   ../../docs/03-PLANES-FEATURE-FLAGS-SUSCRIPCIONES.md
 //   ../../docs/04-SEGURIDAD-BASELINE.md (sección 1: refresh tokens revocables)
+//   ../../docs/07-SUPER-ADMIN.md (Etapa 3: MFA obligatorio, lockout, soporte, comunicaciones)
 //
 // Los módulos de negocio (Client, Service, Professional, Appointment,
 // Product, Sale, CashRegister, etc.) se agregan en sus propias etapas,
@@ -46,26 +49,44 @@ model Tenant {
   planId String?
   plan   Plan?   @relation(fields: [planId], references: [id])
 
-  branches           Branch[]
-  users              User[]
-  roles              Role[]
-  tenantFeatureFlags TenantFeatureFlag[]
-  subscription       Subscription?
-  auditLogs          AuditLog[]
+  branches             Branch[]
+  users                User[]
+  roles                Role[]
+  tenantFeatureFlags   TenantFeatureFlag[]
+  subscription         Subscription?
+  auditLogs            AuditLog[]
+  supportTickets       SupportTicket[]
+  communicationTenants CommunicationTenant[]
 
   @@index([status])
 }
 
 model PlatformAdmin {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  mfaEnabled   Boolean   @default(false)
-  mfaSecret    String?
-  status       String    @default("active") // active | suspended
-  lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String
+  mfaEnabled          Boolean   @default(false)
+  mfaSecret           String?
+  status              String    @default("active") // active | suspended
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  refreshTokens PlatformRefreshToken[]
+}
+
+model PlatformRefreshToken {
+  id              String        @id @default(cuid())
+  platformAdminId String
+  platformAdmin   PlatformAdmin @relation(fields: [platformAdminId], references: [id])
+  tokenHash       String        @unique
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([platformAdminId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -196,8 +217,9 @@ model Plan {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  tenants  Tenant[]
-  features PlanFeature[]
+  tenants       Tenant[]
+  features      PlanFeature[]
+  communications Communication[]
 }
 
 model FeatureFlag {
@@ -293,4 +315,67 @@ model AuditLog {
 
   @@index([tenantId, createdAt])
   @@index([entityType, entityId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SOPORTE (punto 59 del pedido: negocio abre tickets, SUPER ADMIN los gestiona)
+// ─────────────────────────────────────────────────────────────────────────
+
+model SupportTicket {
+  id                String    @id @default(cuid())
+  tenantId          String
+  tenant            Tenant    @relation(fields: [tenantId], references: [id])
+  subject           String
+  status            String    @default("open") // open | in_progress | resolved | closed
+  priority          String    @default("medium") // low | medium | high
+  createdByUserId   String
+  assignedToAdminId String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  messages SupportTicketMessage[]
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model SupportTicketMessage {
+  id         String        @id @default(cuid())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id])
+  authorType String        // user | platform_admin
+  authorId   String
+  body       String
+  createdAt  DateTime      @default(now())
+
+  @@index([ticketId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// COMUNICACIONES GLOBALES (punto 60 del pedido)
+// ─────────────────────────────────────────────────────────────────────────
+
+model Communication {
+  id               String   @id @default(cuid())
+  title            String
+  body             String
+  audienceType     String   // all | plan | tenants
+  planId           String?
+  plan             Plan?    @relation(fields: [planId], references: [id])
+  createdByAdminId String
+  createdAt        DateTime @default(now())
+
+  tenants CommunicationTenant[]
+}
+
+// Solo se usa cuando audienceType = "tenants" (negocios puntuales elegidos
+// a mano por SUPER ADMIN). Si audienceType es "all" o "plan", esta tabla
+// queda vacía para esa comunicación — el filtro se resuelve en runtime.
+model CommunicationTenant {
+  communicationId String
+  communication   Communication @relation(fields: [communicationId], references: [id])
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id])
+
+  @@id([communicationId, tenantId])
 }

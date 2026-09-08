@@ -41,9 +41,17 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       tenants (IDOR) exigido por el punto 73 del pedido. MFA para
       PlatformAdmin queda pendiente para la Etapa 3 (junto con el propio
       panel de SUPER ADMIN).
-- [ ] **Etapa 3 — SUPER ADMIN (panel y API separados)**: CRUD de negocios,
-      suspender/reactivar, búsqueda/filtro, auditoría y logs visibles,
-      comunicaciones globales, soporte (tickets) básico.
+- [x] **Etapa 3 — SUPER ADMIN (panel y API separados)**: dominio de auth
+      totalmente separado del de negocio (`PlatformAdmin`, secretos JWT
+      propios, estrategia passport propia), MFA (TOTP) obligatorio en dos
+      pasos, bloqueo de cuenta por intentos fallidos + rate limiting global
+      (`@nestjs/throttler`), CRUD de negocios (alta/búsqueda/filtro/
+      suspender/reactivar/cancelar) con efecto inmediato sobre sesiones
+      activas, auditoría global paginada, soporte (tickets negocio ↔ SUPER
+      ADMIN) y comunicaciones globales (todos/plan/negocios puntuales,
+      creación + listado — el consumo del lado negocio queda para la Etapa
+      14). 39 tests en la suite completa. Detalle en
+      `docs/07-SUPER-ADMIN.md`.
 - [ ] **Etapa 4 — Planes y Feature Flags (código)**: `PlanService`,
       `FeatureFlagService`, `FeatureFlagGuard`, `PlanLimitsGuard`, panel de
       SUPER ADMIN para editar planes/flags.
@@ -84,8 +92,8 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 - [ ] **Etapa 22 — Auditoría avanzada y Observabilidad** (dashboards de
       logs/métricas, más allá del `AuditLog` ya modelado en Etapa 1).
 - [ ] **Etapa 23 — Seguridad hardening**: RLS de Postgres activado (ver doc
-      `02`), pentest interno (checklist del doc `04` sección 10), rate
-      limiting global.
+      `02`), pentest interno (checklist del doc `04` sección 10). El rate
+      limiting global ya se implementó en la Etapa 3 (`@nestjs/throttler`).
 - [ ] **Etapa 24 — Backups**: automatización, verificación por restauración
       real (no solo "se generó el archivo"), registro de backups.
 - [ ] **Etapa 25 — Testing end-to-end y de carga**: escenarios de
@@ -94,15 +102,21 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Al confirmar esta Etapa 1, la Etapa 2 arranca con:
+La Etapa 4 (Planes y Feature Flags — código real sobre el modelo ya
+diseñado en la Etapa 1, doc `03`) arranca con:
 
-1. Setup del proyecto NestJS + Prisma en `peluqueria-saas/backend/` sobre el
-   `schema.prisma` ya diseñado.
-2. Migraciones iniciales (`prisma migrate dev`).
-3. Módulo `auth` (login, refresh, hash de password, MFA opcional).
-4. Módulo `tenancy` (middleware de resolución de tenant + Prisma extension
-   de filtrado automático).
-5. Módulo `users` + `roles` (CRUD + asignación de permisos).
-6. Seeders de permisos de sistema y roles predefinidos.
-7. Tests de aislamiento multi-tenant (el primero: "Tenant A no puede leer
-   datos de Tenant B").
+1. `PlanService` + `FeatureFlagService` centralizados (doc `03` §4.6):
+   resolución de la jerarquía SUPER ADMIN → Plan → Negocio en un único
+   lugar, nada de `if plan === 'premium'` repetido por el código.
+2. `FeatureFlagGuard` (decorador `@RequiresFeature('key')`) y
+   `PlanLimitsGuard` (bloquea creación de usuarios/profesionales/sucursales/
+   clientes por encima del límite del plan — doc `05` §2).
+3. Endpoints de SUPER ADMIN para gestionar el catálogo de planes y feature
+   flags (`platform-admin/plans`, `platform-admin/feature-flags`) — el
+   modelo de datos y las reglas ya están, falta la API de gestión.
+4. Endpoints de negocio para que el propio tenant vea sus flags disponibles
+   y prenda/apague los que su plan permite (`TenantFeatureFlag`).
+5. Tests: SUPER ADMIN deshabilita un flag global → ningún negocio puede
+   usarlo aunque su plan lo incluya (punto 74 del pedido); plan no incluye
+   un flag → el negocio no puede activarlo; negocio desactiva un flag → los
+   datos históricos del módulo permanecen intactos.
