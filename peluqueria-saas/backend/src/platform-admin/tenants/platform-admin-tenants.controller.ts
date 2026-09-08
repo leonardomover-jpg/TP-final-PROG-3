@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@ne
 import { PlatformAdminTenantsService } from './platform-admin-tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { ListTenantsQueryDto } from './dto/list-tenants.query.dto';
+import { AssignPlanDto } from './dto/assign-plan.dto';
 import { PlatformAdminJwtAuthGuard } from '../auth/guards/platform-admin-jwt-auth.guard';
 import { CurrentPlatformAdmin } from '../auth/decorators/current-platform-admin.decorator';
 import { AuthenticatedPlatformAdmin } from '../auth/platform-admin-auth.types';
@@ -29,6 +30,15 @@ export class PlatformAdminTenantsController {
   @Post()
   create(@Body() dto: CreateTenantDto, @CurrentPlatformAdmin() admin: AuthenticatedPlatformAdmin) {
     return this.tenantsService.create(dto, admin.platformAdminId);
+  }
+
+  @Patch(':id/plan')
+  assignPlan(
+    @Param('id') id: string,
+    @Body() dto: AssignPlanDto,
+    @CurrentPlatformAdmin() admin: AuthenticatedPlatformAdmin,
+  ) {
+    return this.tenantsService.assignPlan(id, dto.planId, admin.platformAdminId);
   }
 
   @Patch(':id/suspend')

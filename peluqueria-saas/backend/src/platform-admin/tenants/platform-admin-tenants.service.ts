@@ -132,6 +132,33 @@ export class PlatformAdminTenantsService {
     return updated;
   }
 
+  async assignPlan(id: string, planId: string, actingAdminId: string) {
+    const tenant = await this.findOne(id);
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      throw new BadRequestException('El plan indicado no existe.');
+    }
+
+    const updated = await this.prisma.tenant.update({
+      where: { id },
+      data: { planId },
+      include: { plan: true },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        tenantId: id,
+        actorType: 'platform_admin',
+        actorId: actingAdminId,
+        action: 'tenant.plan_changed',
+        entityType: 'Tenant',
+        entityId: id,
+        beforeData: { planId: tenant.planId },
+        afterData: { planId },
+      },
+    });
+    return updated;
+  }
+
   suspend(id: string, actingAdminId: string) {
     return this.changeStatus(id, 'suspended', 'tenant.suspended', actingAdminId);
   }

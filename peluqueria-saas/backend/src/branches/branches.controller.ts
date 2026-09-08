@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { BranchesService } from './branches.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { PlanLimitsGuard } from '../plan-limits/guards/plan-limits.guard';
+import { LimitResource } from '../plan-limits/decorators/limit-resource.decorator';
 
 @Controller('branches')
 export class BranchesController {
@@ -21,6 +23,8 @@ export class BranchesController {
   }
 
   @RequirePermissions('sucursales.crear')
+  @UseGuards(PlanLimitsGuard)
+  @LimitResource('branches')
   @Post()
   create(@Body() dto: CreateBranchDto) {
     return this.branchesService.create(dto);

@@ -21,8 +21,12 @@ repositorio — no comparten código, base de datos ni dependencias.
   totalmente distinto del de negocio, con MFA (TOTP) obligatorio, gestión de
   negocios (alta/búsqueda/suspender/reactivar/cancelar), auditoría global,
   soporte y comunicaciones globales.
+- ✅ **Etapa 4 — Planes y Feature Flags (código real)**: jerarquía SUPER
+  ADMIN → Plan → Negocio resuelta en un único service, límites de plan
+  aplicados de verdad al crear usuarios/sucursales, gestión de planes/flags
+  desde SUPER ADMIN.
 
-39 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+47 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -57,6 +61,25 @@ Implementado en Etapa 3 (detalle completo en
   (todos / un plan / negocios puntuales) — el consumo del lado negocio
   queda para la Etapa 14 (Notificaciones).
 
+Implementado en Etapa 4 (detalle completo en
+[`docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md`](docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md)),
+sin ninguna migración nueva — el modelo ya estaba diseñado desde la Etapa 1:
+
+- `FeatureFlagsService`: único lugar que resuelve si un negocio puede usar
+  un módulo (global habilitado + incluido en el plan + prendido por el
+  propio negocio), con el motivo exacto cuando no puede.
+- `FeatureFlagGuard`/`@RequiresFeature`: infraestructura lista para que los
+  módulos opcionales de etapas siguientes (Puntos, Gift Cards, WhatsApp...)
+  se gateen sin repetir lógica.
+- `PlanLimitsGuard`/`@LimitResource`: límites de plan aplicados de verdad —
+  ya conectado a la creación de usuarios y sucursales, con mensaje claro al
+  llegar al tope.
+- SUPER ADMIN gestiona el catálogo de planes y feature flags en runtime
+  (`platform-admin/plans`, `platform-admin/feature-flags`), incluida la
+  asignación de plan a un negocio existente.
+- El propio negocio ve y prende/apaga sus módulos disponibles
+  (`GET`/`PATCH /feature-flags`) y su plan + uso actual (`GET /plan`).
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
 El resto de los módulos de negocio (clientes, turnos, ventas, inventario,
@@ -74,6 +97,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 | [`docs/05-OBSERVACIONES-Y-RIESGOS.md`](docs/05-OBSERVACIONES-Y-RIESGOS.md) | Funcionalidades/decisiones no explícitas en el pedido original, señaladas antes de implementar |
 | [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md) | Orden de las próximas etapas y checklist de revisión por etapa |
 | [`docs/07-SUPER-ADMIN.md`](docs/07-SUPER-ADMIN.md) | Etapa 3: separación de dominios de auth, MFA obligatorio, gestión de negocios, soporte, comunicaciones |
+| [`docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md`](docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md) | Etapa 4: FeatureFlagsService, FeatureFlagGuard, PlanLimitsGuard, gestión de planes/flags |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -89,7 +113,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 4 del roadmap: Planes y Feature Flags (código real
-sobre el modelo ya diseñado en la Etapa 1 — `PlanService`,
-`FeatureFlagService`, `FeatureFlagGuard`, `PlanLimitsGuard`), según el
-detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 5 del roadmap: Suscripciones + Mercado Pago (billing
+de la propia plataforma — checkout, webhooks, idempotencia, estados de
+suscripción calculados siempre con la fecha del servidor), según el detalle
+de `docs/06-ROADMAP-ETAPAS.md`.

@@ -52,9 +52,18 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       creación + listado — el consumo del lado negocio queda para la Etapa
       14). 39 tests en la suite completa. Detalle en
       `docs/07-SUPER-ADMIN.md`.
-- [ ] **Etapa 4 — Planes y Feature Flags (código)**: `PlanService`,
-      `FeatureFlagService`, `FeatureFlagGuard`, `PlanLimitsGuard`, panel de
-      SUPER ADMIN para editar planes/flags.
+- [x] **Etapa 4 — Planes y Feature Flags (código)**: `FeatureFlagsService`
+      (único lugar que resuelve SUPER ADMIN → Plan → Negocio),
+      `FeatureFlagGuard`/`@RequiresFeature` (infraestructura lista para los
+      módulos opcionales de etapas siguientes), `PlanLimitsService`/
+      `PlanLimitsGuard`/`@LimitResource` ya conectado a `users` y
+      `branches`, CRUD de planes/feature flags desde SUPER ADMIN
+      (`platform-admin/plans`, `platform-admin/feature-flags`) +
+      asignación de plan a un negocio existente, endpoints de negocio
+      `GET/PATCH /feature-flags` y `GET /plan`. Sin migraciones nuevas — el
+      modelo ya estaba diseñado desde la Etapa 1. 47 tests en la suite
+      completa (8 nuevos). Detalle en
+      `docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md`.
 - [ ] **Etapa 5 — Suscripciones + Mercado Pago (billing de la plataforma)**:
       checkout de suscripción, webhooks, estados (trial/activa/vencida),
       idempotencia, historial de pagos.
@@ -102,21 +111,25 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-La Etapa 4 (Planes y Feature Flags — código real sobre el modelo ya
-diseñado en la Etapa 1, doc `03`) arranca con:
+La Etapa 5 (Suscripciones + Mercado Pago — billing de la propia plataforma,
+doc `03` §4.7/§4.8) arranca con:
 
-1. `PlanService` + `FeatureFlagService` centralizados (doc `03` §4.6):
-   resolución de la jerarquía SUPER ADMIN → Plan → Negocio en un único
-   lugar, nada de `if plan === 'premium'` repetido por el código.
-2. `FeatureFlagGuard` (decorador `@RequiresFeature('key')`) y
-   `PlanLimitsGuard` (bloquea creación de usuarios/profesionales/sucursales/
-   clientes por encima del límite del plan — doc `05` §2).
-3. Endpoints de SUPER ADMIN para gestionar el catálogo de planes y feature
-   flags (`platform-admin/plans`, `platform-admin/feature-flags`) — el
-   modelo de datos y las reglas ya están, falta la API de gestión.
-4. Endpoints de negocio para que el propio tenant vea sus flags disponibles
-   y prenda/apague los que su plan permite (`TenantFeatureFlag`).
-5. Tests: SUPER ADMIN deshabilita un flag global → ningún negocio puede
-   usarlo aunque su plan lo incluya (punto 74 del pedido); plan no incluye
-   un flag → el negocio no puede activarlo; negocio desactiva un flag → los
-   datos históricos del módulo permanecen intactos.
+1. `SubscriptionService`: alta de suscripción al registrar/asignar un plan
+   (`trial` por defecto), cálculo de `expiring_soon`/`past_due` siempre con
+   la fecha del servidor (punto 13 del pedido, nunca la del cliente).
+2. Integración con Mercado Pago usando exclusivamente los mecanismos
+   oficiales (Checkout Pro/Bricks) — antes de tocar código, releer la
+   documentación oficial vigente (punto 94: nunca inventar endpoints).
+3. Endpoint de webhook (`POST /webhooks/mercado-pago`): validación de
+   firma, idempotencia por `(provider, providerPaymentId)` — el
+   `@@unique` correspondiente ya existe desde la Etapa 1 en
+   `SubscriptionPayment` — y procesamiento vía job en cola, nunca
+   síncronamente en el handler (punto 65/66).
+4. Onboarding: forzar selección de plan al registrar un negocio (hoy
+   `POST /auth/register-tenant` no pide plan — ver doc `08` §5, decisión de
+   scope de la Etapa 4 que esta etapa cierra).
+5. Endpoints de negocio para ver el estado de su propia suscripción y
+   pagos históricos.
+6. Tests: webhook duplicado no duplica el pago (ya cubierto en el modelo
+   desde la Etapa 1, falta el flujo real); suscripción vencida degrada el
+   acceso; el contador de días usa la fecha del servidor.

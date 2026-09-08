@@ -53,6 +53,66 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
 
   { key: 'soporte.ver', module: 'soporte', description: 'Ver tickets de soporte del negocio' },
   { key: 'soporte.crear', module: 'soporte', description: 'Crear tickets de soporte' },
+
+  { key: 'feature_flags.ver', module: 'feature_flags', description: 'Ver módulos disponibles para el negocio' },
+  {
+    key: 'feature_flags.gestionar',
+    module: 'feature_flags',
+    description: 'Activar/desactivar módulos opcionales del negocio',
+  },
+];
+
+// Catálogo inicial de módulos opcionales (punto 10 del pedido, sección
+// "FEATURE FLAGS Y MÓDULOS OPCIONALES"). SUPER ADMIN puede agregar más o
+// deshabilitar cualquiera de estos en runtime — esto es solo el arranque.
+const FEATURE_FLAGS: { key: string; name: string; description: string }[] = [
+  { key: 'points', name: 'Puntos', description: 'Sistema de fidelización por puntos' },
+  { key: 'gift_cards', name: 'Gift Cards', description: 'Tarjetas de regalo' },
+  { key: 'referrals', name: 'Referidos', description: 'Programa de referidos entre clientes' },
+  { key: 'whatsapp', name: 'WhatsApp', description: 'Integración con WhatsApp Business Platform (Meta)' },
+  { key: 'instagram', name: 'Instagram', description: 'Integración con Instagram (Meta)' },
+  { key: 'facebook', name: 'Facebook', description: 'Integración con Facebook (Meta)' },
+  { key: 'ai', name: 'Inteligencia Artificial', description: 'Asistencia con IA sobre estadísticas y clientes' },
+  { key: 'inventory', name: 'Inventario', description: 'Gestión de inventario de productos' },
+  { key: 'branches', name: 'Sucursales', description: 'Soporte para múltiples sucursales' },
+  { key: 'waitlist', name: 'Lista de espera', description: 'Lista de espera de turnos' },
+  { key: 'advanced_reports', name: 'Reportes avanzados', description: 'Reportes y estadísticas avanzadas' },
+];
+
+// Dos planes de ejemplo para poder probar la jerarquía de principio a fin
+// apenas se instala la plataforma. Nombres, precios y límites son
+// editables desde SUPER ADMIN en cualquier momento (punto 84 del pedido) —
+// esto es solo el punto de partida.
+const PLANS: {
+  name: string;
+  price: number;
+  billingPeriod: 'monthly' | 'yearly';
+  maxUsers: number;
+  maxProfessionals: number;
+  maxBranches: number;
+  maxClients: number;
+  featureKeys: string[];
+}[] = [
+  {
+    name: 'Básico',
+    price: 9999,
+    billingPeriod: 'monthly',
+    maxUsers: 3,
+    maxProfessionals: 2,
+    maxBranches: 1,
+    maxClients: 200,
+    featureKeys: ['waitlist'],
+  },
+  {
+    name: 'Premium',
+    price: 29999,
+    billingPeriod: 'monthly',
+    maxUsers: 20,
+    maxProfessionals: 15,
+    maxBranches: 5,
+    maxClients: 5000,
+    featureKeys: FEATURE_FLAGS.map((f) => f.key), // todos
+  },
 ];
 
 const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
@@ -116,6 +176,30 @@ async function main() {
     await upsertSystemRole(role.name, idsForKeys(role.permissionKeys));
   }
 
+  for (const flag of FEATURE_FLAGS) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: {},
+      create: { ...flag, globallyEnabled: true },
+    });
+  }
+  const allFlags = await prisma.featureFlag.findMany();
+  const flagIdsForKeys = (keys: string[]) =>
+    allFlags.filter((f) => keys.includes(f.key)).map((f) => f.id);
+
+  for (const planDef of PLANS) {
+    const { featureKeys, ...planData } = planDef;
+    const existingPlan = await prisma.plan.findFirst({ where: { name: planDef.name } });
+    const plan = existingPlan
+      ? await prisma.plan.update({ where: { id: existingPlan.id }, data: planData })
+      : await prisma.plan.create({ data: planData });
+
+    await prisma.planFeature.deleteMany({ where: { planId: plan.id } });
+    await prisma.planFeature.createMany({
+      data: flagIdsForKeys(featureKeys).map((featureFlagId) => ({ planId: plan.id, featureFlagId })),
+    });
+  }
+
   // Bootstrap del primer SUPER ADMIN. No hay endpoint público de alta de
   // PlatformAdmin (sería un agujero de seguridad — punto 8 del pedido): la
   // única forma de crear el primero es este seed, leyendo credenciales de
@@ -139,7 +223,10 @@ async function main() {
     );
   }
 
-  console.log(`Seed OK: ${allPermissions.length} permisos, ${SYSTEM_ROLES.length} roles de sistema.`);
+  console.log(
+    `Seed OK: ${allPermissions.length} permisos, ${SYSTEM_ROLES.length} roles de sistema, ` +
+      `${allFlags.length} feature flags, ${PLANS.length} planes.`,
+  );
 }
 
 main()

@@ -1,8 +1,9 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 y 3)
+# Backend — Prompt Maestro SaaS (Etapas 2, 3 y 4)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
-mecanismo de aislamiento multi-tenant (Etapa 2), más el panel de SUPER ADMIN
-completamente separado del de negocio (Etapa 3). Ver `../docs/` para el
+mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
+completamente separado del de negocio (Etapa 3), y Planes + Feature Flags
+con límites de plan aplicados de verdad (Etapa 4). Ver `../docs/` para el
 diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
@@ -16,8 +17,9 @@ diseño completo (arquitectura, base de datos, seguridad, roadmap).
 npm install
 cp .env.example .env   # completar DATABASE_URL, los JWT_*_SECRET y el bootstrap de SUPER ADMIN
 npm run prisma:migrate # aplica las migraciones (crea las tablas)
-npm run prisma:seed    # carga el catálogo de permisos, los roles de sistema
-                        # y crea el primer PlatformAdmin (SUPER_ADMIN_BOOTSTRAP_*)
+npm run prisma:seed    # carga el catálogo de permisos, los roles de sistema,
+                        # crea el primer PlatformAdmin (SUPER_ADMIN_BOOTSTRAP_*)
+                        # y siembra planes/feature flags de ejemplo
 ```
 
 ## Correr
@@ -84,30 +86,59 @@ curl http://localhost:3000/api/v1/platform-admin/tenants \
   -H "Authorization: Bearer <accessToken de SUPER ADMIN>"
 ```
 
+## Flujo mínimo de prueba manual — Planes y Feature Flags
+
+```bash
+# 1) Asignarle el plan Premium (sembrado por el seed) a un negocio existente
+curl -X PATCH http://localhost:3000/api/v1/platform-admin/tenants/<tenantId>/plan \
+  -H "Authorization: Bearer <accessToken de SUPER ADMIN>" \
+  -H "Content-Type: application/json" \
+  -d '{"planId":"<idDelPlanPremium>"}'
+
+# 2) El negocio ve qué módulos tiene disponibles
+curl http://localhost:3000/api/v1/feature-flags \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 3) El negocio activa uno (solo funciona si "available":true)
+curl -X PATCH http://localhost:3000/api/v1/feature-flags/points \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled":true}'
+
+# 4) Ver plan actual + uso vs. límites
+curl http://localhost:3000/api/v1/plan \
+  -H "Authorization: Bearer <accessToken del negocio>"
+```
+
 ## Estructura
 
 ```
 src/
 ├── auth/                     # login, refresh, register-tenant, JWT strategy, guards (negocio)
 ├── prisma/                   # PrismaService (crudo) + TenantPrismaService (tenant-scoped)
-├── users/                     # CRUD de usuarios (tenant-scoped, soft delete)
+├── users/                     # CRUD de usuarios (tenant-scoped, soft delete, PlanLimitsGuard)
 ├── roles/                      # CRUD de roles (sistema + propios del negocio)
 ├── permissions/                 # catálogo global de permisos (solo lectura)
-├── branches/                     # CRUD de sucursales
+├── branches/                     # CRUD de sucursales (PlanLimitsGuard)
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
-├── platform-admin/                 # todo lo de SUPER ADMIN — dominio de auth separado
-│   ├── auth/                        # login+MFA en 2 pasos, JWT/estrategia propios
-│   ├── tenants/                      # alta/búsqueda/suspender/reactivar/cancelar negocios
-│   ├── audit/                         # lectura de auditoría global
-│   ├── support/                        # tickets de soporte, lado SUPER ADMIN (todos los tenants)
-│   └── communications/                  # comunicaciones globales (todos/plan/negocios puntuales)
-├── common/filters/                       # manejo de errores (nunca se expone detalle técnico)
-└── app.module.ts                          # wiring de guards globales + throttler
+├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
+├── plan-limits/                     # PlanLimitsService + PlanLimitsGuard (límites de plan)
+├── plan-info/                        # GET /plan — plan actual + uso vs. límites
+├── platform-admin/                    # todo lo de SUPER ADMIN — dominio de auth separado
+│   ├── auth/                           # login+MFA en 2 pasos, JWT/estrategia propios
+│   ├── tenants/                         # alta/búsqueda/suspender/reactivar/cancelar/asignar plan
+│   ├── audit/                            # lectura de auditoría global
+│   ├── support/                           # tickets de soporte, lado SUPER ADMIN (todos los tenants)
+│   ├── communications/                     # comunicaciones globales (todos/plan/negocios puntuales)
+│   ├── plans/                               # CRUD de planes + asociación de feature flags
+│   └── feature-flags/                        # catálogo global de feature flags
+├── common/filters/                             # manejo de errores (nunca se expone detalle técnico)
+└── app.module.ts                                # wiring de guards globales + throttler
 
 prisma/
-├── schema.prisma    # modelo de datos (fundacional + auth + SUPER ADMIN)
+├── schema.prisma    # modelo de datos (fundacional + auth + SUPER ADMIN + planes/flags)
 ├── migrations/       # historial versionado del schema (nunca a mano en prod)
-└── seed.ts             # catálogo de permisos + roles de sistema + bootstrap de SUPER ADMIN
+└── seed.ts             # permisos + roles de sistema + bootstrap de SUPER ADMIN + planes/flags de ejemplo
 
 test/
 ├── auth.spec.ts                        # registro, login, refresh con rotación, logout (negocio)
@@ -117,7 +148,9 @@ test/
 ├── platform-admin-tenants.spec.ts           # CRUD de negocios, efecto inmediato de suspender
 ├── support.spec.ts                           # aislamiento de tickets entre tenants
 ├── platform-admin-communications.spec.ts       # 3 tipos de audiencia + validaciones
-└── helpers/platform-admin.ts                    # helper compartido: crear+loguear un SUPER ADMIN
+├── feature-flags.spec.ts                        # jerarquía SUPER ADMIN → Plan → Negocio completa
+├── plan-limits.spec.ts                           # límites de plan aplicados de verdad
+└── helpers/platform-admin.ts                      # helper compartido: crear+loguear un SUPER ADMIN
 ```
 
 ## Por qué el aislamiento multi-tenant es "imposible de olvidar"

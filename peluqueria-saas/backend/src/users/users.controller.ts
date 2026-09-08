@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { PlanLimitsGuard } from '../plan-limits/guards/plan-limits.guard';
+import { LimitResource } from '../plan-limits/decorators/limit-resource.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -21,6 +23,8 @@ export class UsersController {
   }
 
   @RequirePermissions('usuarios.crear')
+  @UseGuards(PlanLimitsGuard)
+  @LimitResource('users')
   @Post()
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);

@@ -13,7 +13,12 @@ import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-ad
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
 import { PlatformAdminSupportModule } from './platform-admin/support/platform-admin-support.module';
 import { PlatformAdminCommunicationsModule } from './platform-admin/communications/platform-admin-communications.module';
+import { PlatformAdminPlansModule } from './platform-admin/plans/platform-admin-plans.module';
+import { PlatformAdminFeatureFlagsModule } from './platform-admin/feature-flags/platform-admin-feature-flags.module';
 import { SupportModule } from './support/support.module';
+import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
+import { PlanLimitsModule } from './plan-limits/plan-limits.module';
+import { PlanInfoModule } from './plan-info/plan-info.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './auth/guards/permissions.guard';
 
@@ -31,11 +36,16 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     PermissionsModule,
     BranchesModule,
     SupportModule,
+    FeatureFlagsModule,
+    PlanLimitsModule,
+    PlanInfoModule,
     PlatformAdminAuthModule,
     PlatformAdminTenantsModule,
     PlatformAdminAuditModule,
     PlatformAdminSupportModule,
     PlatformAdminCommunicationsModule,
+    PlatformAdminPlansModule,
+    PlatformAdminFeatureFlagsModule,
   ],
   providers: [
     // Orden importa: primero rate limiting, después autenticación (JWT),
