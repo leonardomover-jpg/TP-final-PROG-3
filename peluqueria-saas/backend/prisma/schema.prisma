@@ -59,6 +59,7 @@ model Tenant {
   communicationTenants CommunicationTenant[]
   clients              Client[]
   professionals        Professional[]
+  services             Service[]
 
   @@index([status])
 }
@@ -371,6 +372,7 @@ model Professional {
   deletedAt            DateTime?
 
   schedules ProfessionalSchedule[]
+  services  ServiceProfessional[]
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
@@ -389,6 +391,50 @@ model ProfessionalSchedule {
   startTime      String // "HH:mm", 24hs
   endTime        String // "HH:mm", 24hs
 
+  @@index([professionalId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SERVICIOS (Etapa 8)
+// ─────────────────────────────────────────────────────────────────────────
+
+// `category` es un tag libre (igual que `Professional.specialties`, doc
+// `11-PROFESIONALES.md` §3), no un catálogo separado: no hay ningún caso de
+// uso todavía (gestionar/reordenar/traducir categorías) que justifique una
+// tabla propia — si aparece, se agrega ahí, no antes (punto 95 del pedido:
+// no inventar estructura sin necesidad concreta).
+model Service {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+  name            String
+  description     String?
+  category        String?
+  durationMinutes Int
+  price           Decimal   @db.Decimal(12, 2)
+  status          String    @default("active") // active | inactive
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  professionals ServiceProfessional[]
+
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+}
+
+// "Profesionales habilitados" para un servicio (punto de la Etapa 8 del
+// roadmap) — M:N entre Service y Professional. Sin tenantId propio (ambos
+// extremos ya son tenant-scoped): ServicesService valida que Service Y
+// cada Professional pertenezcan al tenant actual antes de escribir acá,
+// mismo patrón que Professional.userId con User (doc `11` §3).
+model ServiceProfessional {
+  serviceId      String
+  service        Service      @relation(fields: [serviceId], references: [id])
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+
+  @@id([serviceId, professionalId])
   @@index([professionalId])
 }
 

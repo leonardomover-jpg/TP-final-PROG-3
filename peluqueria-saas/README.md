@@ -37,8 +37,11 @@ repositorio — no comparten código, base de datos ni dependencias.
   (tags), comisión, horario semanal propio reemplazable, vínculo opcional
   1:1 a un usuario del sistema, límite de plan por cantidad de
   profesionales.
+- ✅ **Etapa 8 — Servicios**: CRUD completo tenant-scoped, categoría (tag),
+  duración/precio, profesionales habilitados por servicio (relación M:N
+  real, reemplazable, valida pertenencia al tenant de ambos extremos).
 
-65 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+69 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -141,9 +144,23 @@ Implementado en Etapa 7 (detalle completo en
   aplicado de verdad, usando un campo del schema que existía desde la
   Etapa 1 sin ningún endpoint que lo usara hasta ahora.
 
+Implementado en Etapa 8 (detalle completo en
+[`docs/12-SERVICIOS.md`](docs/12-SERVICIOS.md)):
+
+- CRUD completo de servicios (`GET/POST/PATCH/DELETE /services`),
+  tenant-scoped igual que Profesionales/Clientes/Usuarios/Sucursales.
+- Categoría como tag libre (mismo criterio que las especialidades de
+  Profesionales) y duración/precio.
+- Profesionales habilitados por servicio: relación M:N real
+  (`ServiceProfessional`), reemplazable por completo vía `PUT
+  /services/:id/professionals`, que valida que tanto el servicio como cada
+  profesional pertenezcan al mismo negocio antes de guardar.
+- Sin límite de plan por cantidad de servicios a propósito: el modelo de
+  planes no anticipó ese límite (no inventado sin un pedido concreto).
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
-El resto de los módulos de negocio (servicios, turnos, ventas, inventario,
+El resto de los módulos de negocio (horarios, turnos, ventas, inventario,
 etc.) se implementan en las etapas siguientes, en el orden definido en
 [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
 
@@ -162,6 +179,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 | [`docs/09-SUSCRIPCIONES-MERCADO-PAGO.md`](docs/09-SUSCRIPCIONES-MERCADO-PAGO.md) | Etapa 5: MercadoPagoService, checkout, webhook idempotente, trial, vencimientos |
 | [`docs/10-CLIENTES.md`](docs/10-CLIENTES.md) | Etapa 6: modelo Client/ClientNote, CRUD, notas internas, ficha con historial placeholder, límite de plan |
 | [`docs/11-PROFESIONALES.md`](docs/11-PROFESIONALES.md) | Etapa 7: modelo Professional/ProfessionalSchedule, CRUD, horario semanal propio, vínculo opcional a User, límite de plan |
+| [`docs/12-SERVICIOS.md`](docs/12-SERVICIOS.md) | Etapa 8: modelo Service/ServiceProfessional, CRUD, categoría, duración/precio, profesionales habilitados |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -177,6 +195,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 8 del roadmap: Servicios — alta/edición,
-categorías, duración/precio, profesionales habilitados, según el detalle
-de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 9 del roadmap: Horarios — horario del negocio,
+horario por profesional (motor de disponibilidad sobre
+`ProfessionalSchedule`), excepciones, feriados argentinos con override
+manual, según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

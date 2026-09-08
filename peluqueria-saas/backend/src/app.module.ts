@@ -10,6 +10,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { BranchesModule } from './branches/branches.module';
 import { ClientsModule } from './clients/clients.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
+import { ServicesModule } from './services/services.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -42,6 +43,7 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     BranchesModule,
     ClientsModule,
     ProfessionalsModule,
+    ServicesModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,

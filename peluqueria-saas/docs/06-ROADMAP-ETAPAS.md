@@ -96,8 +96,15 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       `Plan.maxProfessionals`, en el schema desde la Etapa 1 sin uso hasta
       ahora). 65 tests en la suite completa (6 nuevos). Detalle en
       `docs/11-PROFESIONALES.md`.
-- [ ] **Etapa 8 — Servicios**: alta/edición, categorías, duración/precio,
-      profesionales habilitados.
+- [x] **Etapa 8 — Servicios**: modelo `Service`/`ServiceProfessional`
+      tenant-scoped, CRUD completo (permisos nuevos
+      `servicios.ver/crear/editar/eliminar`), categoría como tag libre
+      (mismo criterio que `Professional.specialties`), duración/precio,
+      profesionales habilitados por servicio (M:N real, reemplazable por
+      `PUT .../professionals`, valida pertenencia al tenant de ambos
+      extremos). Sin `PlanLimitsGuard` a propósito — `Plan` no tiene
+      `maxServices`, el pedido no anticipó ese límite. 69 tests en la
+      suite completa (4 nuevos). Detalle en `docs/12-SERVICIOS.md`.
 - [ ] **Etapa 9 — Horarios**: horario del negocio, horario por profesional,
       excepciones, feriados argentinos (con override manual por negocio).
 - [ ] **Etapa 10 — Agenda y Turnos**: vistas día/semana/mes/lista, motor de
@@ -135,6 +142,8 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 8 del roadmap: Servicios — alta/edición,
-categorías, duración/precio, profesionales habilitados (según el detalle
-de más arriba).
+Continuar con la Etapa 9 del roadmap: Horarios — horario del negocio,
+horario por profesional (motor de disponibilidad sobre
+`ProfessionalSchedule`, ya modelado en la Etapa 7), excepciones, feriados
+argentinos con override manual por negocio (según el detalle de más
+arriba).

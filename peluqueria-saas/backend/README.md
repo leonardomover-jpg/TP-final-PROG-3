@@ -1,12 +1,12 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 7)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 8)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
 completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
 límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
-Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6) y
-Profesionales (Etapa 7). Ver `../docs/` para el diseño completo
-(arquitectura, base de datos, seguridad, roadmap).
+Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6),
+Profesionales (Etapa 7) y Servicios (Etapa 8). Ver `../docs/` para el
+diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -160,6 +160,26 @@ curl http://localhost:3000/api/v1/professionals/<professionalId> \
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Servicios
+
+```bash
+# 1) Crear un servicio
+curl -X POST http://localhost:3000/api/v1/services \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Corte","durationMinutes":30,"price":5000,"category":"corte"}'
+
+# 2) Habilitar profesionales para ese servicio (reemplaza la lista completa)
+curl -X PUT http://localhost:3000/api/v1/services/<serviceId>/professionals \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"professionalIds":["<professionalId>"]}'
+
+# 3) Ver la ficha completa (datos + profesionales habilitados)
+curl http://localhost:3000/api/v1/services/<serviceId> \
+  -H "Authorization: Bearer <accessToken del negocio>"
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -195,6 +215,7 @@ src/
 ├── branches/                     # CRUD de sucursales (PlanLimitsGuard)
 ├── clients/                        # CRUD de clientes (CRM), notas internas, ficha (PlanLimitsGuard)
 ├── professionals/                   # CRUD de profesionales, horario semanal propio, vínculo a User
+├── services/                         # CRUD de servicios, categoría, duración/precio, profesionales habilitados
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
 ├── plan-limits/                     # PlanLimitsService + PlanLimitsGuard (límites de plan)
@@ -232,6 +253,7 @@ test/
 ├── subscriptions.spec.ts                          # checkout mockeado, firma de webhook, idempotencia
 ├── clients.spec.ts                                 # CRUD, notas internas, aislamiento, límite de plan
 ├── professionals.spec.ts                           # CRUD, horario, vínculo a User, aislamiento, límite de plan
+├── services.spec.ts                                # CRUD, profesionales habilitados, aislamiento cross-tenant
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

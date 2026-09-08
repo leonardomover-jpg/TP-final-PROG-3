@@ -37,6 +37,15 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
   { key: 'profesionales.editar', module: 'profesionales', description: 'Editar profesionales (incluye horarios)' },
   { key: 'profesionales.eliminar', module: 'profesionales', description: 'Eliminar profesionales' },
 
+  { key: 'servicios.ver', module: 'servicios', description: 'Ver servicios' },
+  { key: 'servicios.crear', module: 'servicios', description: 'Crear servicios' },
+  {
+    key: 'servicios.editar',
+    module: 'servicios',
+    description: 'Editar servicios (incluye profesionales habilitados)',
+  },
+  { key: 'servicios.eliminar', module: 'servicios', description: 'Eliminar servicios' },
+
   { key: 'turnos.ver', module: 'turnos', description: 'Ver turnos' },
   { key: 'turnos.crear', module: 'turnos', description: 'Crear turnos' },
   { key: 'turnos.editar', module: 'turnos', description: 'Editar turnos' },
@@ -140,6 +149,7 @@ const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
       'clientes.crear',
       'clientes.editar',
       'profesionales.ver',
+      'servicios.ver',
       'turnos.ver',
       'turnos.crear',
       'turnos.editar',
@@ -153,7 +163,7 @@ const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
   },
   {
     name: 'Profesional',
-    permissionKeys: ['turnos.ver', 'turnos.editar', 'clientes.ver', 'profesionales.ver'],
+    permissionKeys: ['turnos.ver', 'turnos.editar', 'clientes.ver', 'profesionales.ver', 'servicios.ver'],
   },
 ];
 
