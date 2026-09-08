@@ -29,8 +29,12 @@ repositorio — no comparten código, base de datos ni dependencias.
   Pro), webhook con firma HMAC-SHA256 validada e idempotencia real por
   constraint único, trial de 14 días, vencimiento calculado siempre con la
   fecha del servidor.
+- ✅ **Etapa 6 — Clientes (CRM)**: primer módulo de negocio "de verdad" —
+  CRUD completo tenant-scoped, notas internas con autor y fecha, ficha con
+  placeholder de historial (Turnos/Ventas/Puntos se completan en etapas
+  futuras), límite de plan por cantidad de clientes aplicado de verdad.
 
-53 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+59 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -103,10 +107,23 @@ Implementado en Etapa 5 (detalle completo en
   fecha del servidor, nunca la del cliente.
 - SUPER ADMIN ve el estado de las suscripciones de todos los negocios.
 
+Implementado en Etapa 6 (detalle completo en
+[`docs/10-CLIENTES.md`](docs/10-CLIENTES.md)):
+
+- CRUD completo de clientes (`GET/POST/PATCH/DELETE /clients`), tenant-scoped
+  igual que Usuarios/Sucursales, sin exigir unicidad de email/teléfono (a
+  diferencia de `User`: un cliente no es una identidad de login).
+- Ficha del cliente con notas internas (`ClientNote`: autor + fecha, historial
+  completo) y un placeholder explícito de historial (turnos/ventas/puntos) que
+  se completa a medida que existan esos módulos.
+- Soft delete: el historial del cliente se conserva, no se pierde.
+- Límite de plan por cantidad de clientes (`maxClients`) aplicado de verdad
+  vía `PlanLimitsGuard` — el `switch` ya estaba preparado desde la Etapa 4.
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
-El resto de los módulos de negocio (clientes, turnos, ventas, inventario,
-etc.) se implementan en las etapas siguientes, en el orden definido en
+El resto de los módulos de negocio (turnos, ventas, inventario, etc.) se
+implementan en las etapas siguientes, en el orden definido en
 [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
 
 ## Documentos
@@ -122,6 +139,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 | [`docs/07-SUPER-ADMIN.md`](docs/07-SUPER-ADMIN.md) | Etapa 3: separación de dominios de auth, MFA obligatorio, gestión de negocios, soporte, comunicaciones |
 | [`docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md`](docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md) | Etapa 4: FeatureFlagsService, FeatureFlagGuard, PlanLimitsGuard, gestión de planes/flags |
 | [`docs/09-SUSCRIPCIONES-MERCADO-PAGO.md`](docs/09-SUSCRIPCIONES-MERCADO-PAGO.md) | Etapa 5: MercadoPagoService, checkout, webhook idempotente, trial, vencimientos |
+| [`docs/10-CLIENTES.md`](docs/10-CLIENTES.md) | Etapa 6: modelo Client/ClientNote, CRUD, notas internas, ficha con historial placeholder, límite de plan |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -137,6 +155,6 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 6 del roadmap: Clientes (CRM) — el primer módulo de
-negocio "de verdad" (turnos, ventas, etc. dependen de que exista Cliente),
+Continuar con la Etapa 7 del roadmap: Profesionales — alta/edición,
+especialidades, horarios propios, comisión, vínculo opcional a `User`,
 según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

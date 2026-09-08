@@ -77,9 +77,14 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       scope, no como olvido). 53 tests en la suite completa (6 nuevos).
       Detalle en `docs/09-SUSCRIPCIONES-MERCADO-PAGO.md` (incluye un bug
       real de scoping de NestJS encontrado y corregido en esta etapa).
-- [ ] **Etapa 6 — Clientes (CRM)**: alta/edición, ficha con historial
-      (placeholder hasta que existan Turnos/Ventas), notas internas,
-      soft delete.
+- [x] **Etapa 6 — Clientes (CRM)**: modelo `Client`/`ClientNote`
+      tenant-scoped, CRUD completo (`clientes.ver/crear/editar/eliminar`,
+      permisos ya seedeados desde la Etapa 2), `PlanLimitsGuard` con
+      `@LimitResource('clients')` (el `switch` ya estaba preparado desde
+      la Etapa 4), ficha con notas internas + historial placeholder
+      (Turnos/Ventas/Puntos se agregan cuando existan esas etapas), soft
+      delete conserva el historial. 59 tests en la suite completa (6
+      nuevos). Detalle en `docs/10-CLIENTES.md`.
 - [ ] **Etapa 7 — Profesionales**: alta/edición, especialidades, horarios
       propios, comisión, vínculo opcional a `User`.
 - [ ] **Etapa 8 — Servicios**: alta/edición, categorías, duración/precio,
@@ -121,21 +126,6 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-La Etapa 6 (Clientes — CRM) arranca con:
-
-1. Modelo `Client` tenant-scoped: datos personales, preferencias, estado,
-   soft delete (mismo patrón que `User`/`Branch` — doc `02` §6). Se agrega
-   al `tenant-scope.extension.ts` como los modelos tenant-scoped ya
-   existentes.
-2. CRUD completo (`clientes.ver/crear/editar/eliminar`, permisos ya
-   seedeados desde la Etapa 2) + `PlanLimitsGuard` con
-   `@LimitResource('clients')` (el `switch` de `PlanLimitsService` ya está
-   preparado para este caso desde la Etapa 4, doc `08` §5).
-3. Ficha del cliente (placeholder de historial): turnos/ventas/puntos van a
-   ir aaadiéndose ahí a medida que existan esos módulos — por ahora,
-   datos personales + notas internas.
-4. Notas internas con control de quién puede verlas (permiso separado si
-   hace falta, a definir según el pedido — punto 25: "respetar privacidad y
-   permisos").
-5. Tests: aislamiento entre tenants (mismo patrón que `tenant-isolation.spec.ts`),
-   límite de plan por cantidad de clientes, soft delete conserva historial.
+Continuar con la Etapa 7 del roadmap: Profesionales — alta/edición,
+especialidades, horarios propios, comisión, vínculo opcional a `User`
+(según el detalle de más arriba).

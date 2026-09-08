@@ -1,11 +1,12 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 5)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 6)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
 completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
-límites de plan aplicados de verdad (Etapa 4), y Suscripciones + Mercado
-Pago — billing real de la plataforma (Etapa 5). Ver `../docs/` para el
-diseño completo (arquitectura, base de datos, seguridad, roadmap).
+límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
+Pago — billing real de la plataforma (Etapa 5), y Clientes/CRM — el primer
+módulo de negocio (Etapa 6). Ver `../docs/` para el diseño completo
+(arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -115,6 +116,30 @@ curl http://localhost:3000/api/v1/plan \
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Clientes (CRM)
+
+```bash
+# 1) Crear un cliente (no exige email/teléfono único, a diferencia de User)
+curl -X POST http://localhost:3000/api/v1/clients \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Marta","lastName":"López","phone":"1122334455"}'
+
+# 2) Ver la ficha completa (datos + notas + placeholder de historial)
+curl http://localhost:3000/api/v1/clients/<clientId> \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 3) Agregar una nota interna
+curl -X POST http://localhost:3000/api/v1/clients/<clientId>/notes \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"body":"Prefiere turnos por la tarde."}'
+
+# 4) Baja (soft delete — el historial se conserva)
+curl -X DELETE http://localhost:3000/api/v1/clients/<clientId> \
+  -H "Authorization: Bearer <accessToken del negocio>"
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -148,6 +173,7 @@ src/
 ├── roles/                      # CRUD de roles (sistema + propios del negocio)
 ├── permissions/                 # catálogo global de permisos (solo lectura)
 ├── branches/                     # CRUD de sucursales (PlanLimitsGuard)
+├── clients/                        # CRUD de clientes (CRM), notas internas, ficha (PlanLimitsGuard)
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
 ├── plan-limits/                     # PlanLimitsService + PlanLimitsGuard (límites de plan)
@@ -183,6 +209,7 @@ test/
 ├── feature-flags.spec.ts                        # jerarquía SUPER ADMIN → Plan → Negocio completa
 ├── plan-limits.spec.ts                           # límites de plan aplicados de verdad
 ├── subscriptions.spec.ts                          # checkout mockeado, firma de webhook, idempotencia
+├── clients.spec.ts                                 # CRUD, notas internas, aislamiento, límite de plan
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

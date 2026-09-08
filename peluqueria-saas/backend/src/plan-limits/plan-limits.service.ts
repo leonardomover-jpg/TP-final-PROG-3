@@ -6,6 +6,7 @@ import { LimitableResource, PlanLimitUsage } from './plan-limits.types';
 const RESOURCE_LABELS: Record<LimitableResource, string> = {
   users: 'usuarios',
   branches: 'sucursales',
+  clients: 'clientes',
 };
 
 /**
@@ -25,6 +26,8 @@ export class PlanLimitsService {
         return plan.maxUsers;
       case 'branches':
         return plan.maxBranches;
+      case 'clients':
+        return plan.maxClients;
     }
   }
 
@@ -34,6 +37,8 @@ export class PlanLimitsService {
         return this.prisma.user.count({ where: { tenantId, deletedAt: null } });
       case 'branches':
         return this.prisma.branch.count({ where: { tenantId, deletedAt: null } });
+      case 'clients':
+        return this.prisma.client.count({ where: { tenantId, deletedAt: null } });
     }
   }
 
@@ -50,7 +55,7 @@ export class PlanLimitsService {
   }
 
   async getAllUsage(tenantId: string): Promise<PlanLimitUsage[]> {
-    const resources: LimitableResource[] = ['users', 'branches'];
+    const resources: LimitableResource[] = ['users', 'branches', 'clients'];
     return Promise.all(resources.map((resource) => this.getUsage(tenantId, resource)));
   }
 

@@ -161,8 +161,13 @@ describe('Suscripciones + Mercado Pago (Etapa 5)', () => {
       .expect(201);
 
     const subscription = await testPrisma.subscription.findUnique({ where: { tenantId } });
-    const dataId = 'payment-999';
-    const requestId = 'req-999';
+    // dataId único por corrida: la idempotencia se garantiza por constraint
+    // único en @@unique([provider, providerPaymentId]) — un valor fijo acá
+    // colisionaría contra la fila insertada por una corrida anterior de este
+    // mismo test contra una base de datos persistente (no se trunca entre
+    // corridas), haciendo que el PRIMER POST ya devuelva "alreadyProcessed".
+    const dataId = `payment-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+    const requestId = `req-${Date.now()}`;
     const xSignature = signWebhook(dataId, requestId);
 
     mockFetchOnce({
@@ -219,11 +224,28 @@ describe('Suscripciones + Mercado Pago (Etapa 5)', () => {
       .send({ planId: premiumPlanId })
       .expect(200);
 
-    const res = await request(app.getHttpServer())
+    const subscription = await testPrisma.subscription.findUnique({ where: { tenantId } });
+
+    // GET /:id en vez de depender de en qué página de la lista paginada cae
+    // esta suscripción — en un ambiente de desarrollo con muchas
+    // suscripciones de trial acumuladas de corridas anteriores, la posición
+    // exacta no es determinística y no es lo que este test quiere probar.
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/platform-admin/subscriptions/${subscription!.id}`)
+      .set('Authorization', `Bearer ${platformAdminToken}`)
+      .expect(200);
+    expect(detail.body.tenantId).toBe(tenantId);
+    expect(detail.body.tenant.id).toBe(tenantId);
+
+    // La lista general (paginada) también debe responder con estructura
+    // válida y sin filtrar entre negocios (mismo dominio de auth, no
+    // multi-tenant scoping acá porque SUPER ADMIN ve todo a propósito).
+    const list = await request(app.getHttpServer())
       .get('/api/v1/platform-admin/subscriptions')
       .set('Authorization', `Bearer ${platformAdminToken}`)
-      .query({ status: 'trial' })
+      .query({ status: 'trial', limit: 100 })
       .expect(200);
-    expect(res.body.items.some((s: any) => s.tenantId === tenantId)).toBe(true);
+    expect(Array.isArray(list.body.items)).toBe(true);
+    expect(list.body.items.every((s: any) => s.status === 'trial')).toBe(true);
   });
 });

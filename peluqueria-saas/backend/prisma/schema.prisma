@@ -57,6 +57,7 @@ model Tenant {
   auditLogs            AuditLog[]
   supportTickets       SupportTicket[]
   communicationTenants CommunicationTenant[]
+  clients              Client[]
 
   @@index([status])
 }
@@ -294,6 +295,48 @@ model SubscriptionPayment {
 
   @@unique([provider, providerPaymentId])
   @@index([subscriptionId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CLIENTES / CRM (Etapa 6)
+// ─────────────────────────────────────────────────────────────────────────
+
+// Sin @@unique en email/phone a propósito (a diferencia de User): un
+// cliente no es una identidad de login, y duplicados son plausibles (ej.
+// un teléfono familiar compartido) — doc `10-CLIENTES.md` §4.
+model Client {
+  id        String    @id @default(cuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  firstName String
+  lastName  String
+  phone     String?
+  email     String?
+  birthDate DateTime?
+  notes     String? // observaciones generales, distinto del historial de ClientNote
+  status    String    @default("active") // active | inactive
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  clientNotes ClientNote[]
+
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+}
+
+// Notas internas con autor y fecha, separadas del campo `notes` general de
+// Client (que es un único texto libre) — permite un historial de
+// observaciones agregadas por distintos empleados a lo largo del tiempo.
+model ClientNote {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id])
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([clientId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────
