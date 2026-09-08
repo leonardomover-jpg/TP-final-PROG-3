@@ -1,9 +1,10 @@
-# Backend — Prompt Maestro SaaS (Etapas 2, 3 y 4)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 5)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
-completamente separado del de negocio (Etapa 3), y Planes + Feature Flags
-con límites de plan aplicados de verdad (Etapa 4). Ver `../docs/` para el
+completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
+límites de plan aplicados de verdad (Etapa 4), y Suscripciones + Mercado
+Pago — billing real de la plataforma (Etapa 5). Ver `../docs/` para el
 diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
@@ -20,6 +21,10 @@ npm run prisma:migrate # aplica las migraciones (crea las tablas)
 npm run prisma:seed    # carga el catálogo de permisos, los roles de sistema,
                         # crea el primer PlatformAdmin (SUPER_ADMIN_BOOTSTRAP_*)
                         # y siembra planes/feature flags de ejemplo
+
+# Completar además MERCADO_PAGO_ACCESS_TOKEN / MERCADO_PAGO_WEBHOOK_SECRET /
+# APP_PUBLIC_URL si vas a probar checkout/webhooks (Etapa 5) — con
+# credenciales de TEST (public/access token que empiezan con TEST-) alcanza.
 ```
 
 ## Correr
@@ -110,6 +115,29 @@ curl http://localhost:3000/api/v1/plan \
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
+
+```bash
+# 1) Elegir un plan (arranca un trial de 14 días y sincroniza Tenant.planId)
+curl -X POST http://localhost:3000/api/v1/subscription/select-plan \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"planId":"<idDeUnPlan>"}'
+
+# 2) Generar el checkout (requiere MERCADO_PAGO_ACCESS_TOKEN configurado
+#    con credenciales de TEST — devuelve una URL real de Mercado Pago)
+curl -X POST http://localhost:3000/api/v1/subscription/checkout \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 3) Ver estado de la suscripción (días restantes calculados en el servidor)
+curl http://localhost:3000/api/v1/subscription \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 4) El webhook (POST /webhooks/mercado-pago) lo llama Mercado Pago, no se
+#    prueba a mano salvo con el simulador de webhooks del dashboard (que sí
+#    firma las notificaciones con el secreto configurado).
+```
+
 ## Estructura
 
 ```
@@ -124,19 +152,23 @@ src/
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
 ├── plan-limits/                     # PlanLimitsService + PlanLimitsGuard (límites de plan)
 ├── plan-info/                        # GET /plan — plan actual + uso vs. límites
-├── platform-admin/                    # todo lo de SUPER ADMIN — dominio de auth separado
-│   ├── auth/                           # login+MFA en 2 pasos, JWT/estrategia propios
-│   ├── tenants/                         # alta/búsqueda/suspender/reactivar/cancelar/asignar plan
-│   ├── audit/                            # lectura de auditoría global
-│   ├── support/                           # tickets de soporte, lado SUPER ADMIN (todos los tenants)
-│   ├── communications/                     # comunicaciones globales (todos/plan/negocios puntuales)
-│   ├── plans/                               # CRUD de planes + asociación de feature flags
-│   └── feature-flags/                        # catálogo global de feature flags
-├── common/filters/                             # manejo de errores (nunca se expone detalle técnico)
-└── app.module.ts                                # wiring de guards globales + throttler
+├── mercado-pago/                      # MercadoPagoService encapsulado (única integración con la API real)
+├── subscriptions/                      # elegir plan, checkout, estado de la suscripción (lado negocio)
+├── webhooks/mercado-pago/               # recibe y procesa notificaciones de pago (público, firma validada)
+├── platform-admin/                       # todo lo de SUPER ADMIN — dominio de auth separado
+│   ├── auth/                              # login+MFA en 2 pasos, JWT/estrategia propios
+│   ├── tenants/                            # alta/búsqueda/suspender/reactivar/cancelar/asignar plan
+│   ├── audit/                               # lectura de auditoría global
+│   ├── support/                              # tickets de soporte, lado SUPER ADMIN (todos los tenants)
+│   ├── communications/                        # comunicaciones globales (todos/plan/negocios puntuales)
+│   ├── plans/                                  # CRUD de planes + asociación de feature flags
+│   ├── feature-flags/                           # catálogo global de feature flags
+│   └── subscriptions/                            # ver suscripciones/vencimientos de todos los negocios
+├── common/filters/                                 # manejo de errores (nunca se expone detalle técnico)
+└── app.module.ts                                    # wiring de guards globales + throttler
 
 prisma/
-├── schema.prisma    # modelo de datos (fundacional + auth + SUPER ADMIN + planes/flags)
+├── schema.prisma    # modelo de datos (fundacional + auth + SUPER ADMIN + planes/flags + suscripciones)
 ├── migrations/       # historial versionado del schema (nunca a mano en prod)
 └── seed.ts             # permisos + roles de sistema + bootstrap de SUPER ADMIN + planes/flags de ejemplo
 
@@ -150,7 +182,8 @@ test/
 ├── platform-admin-communications.spec.ts       # 3 tipos de audiencia + validaciones
 ├── feature-flags.spec.ts                        # jerarquía SUPER ADMIN → Plan → Negocio completa
 ├── plan-limits.spec.ts                           # límites de plan aplicados de verdad
-└── helpers/platform-admin.ts                      # helper compartido: crear+loguear un SUPER ADMIN
+├── subscriptions.spec.ts                          # checkout mockeado, firma de webhook, idempotencia
+└── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 
 ## Por qué el aislamiento multi-tenant es "imposible de olvidar"

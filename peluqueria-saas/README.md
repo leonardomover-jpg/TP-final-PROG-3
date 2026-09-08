@@ -25,8 +25,12 @@ repositorio — no comparten código, base de datos ni dependencias.
   ADMIN → Plan → Negocio resuelta en un único service, límites de plan
   aplicados de verdad al crear usuarios/sucursales, gestión de planes/flags
   desde SUPER ADMIN.
+- ✅ **Etapa 5 — Suscripciones + Mercado Pago**: checkout real (Checkout
+  Pro), webhook con firma HMAC-SHA256 validada e idempotencia real por
+  constraint único, trial de 14 días, vencimiento calculado siempre con la
+  fecha del servidor.
 
-47 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+53 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -80,6 +84,25 @@ sin ninguna migración nueva — el modelo ya estaba diseñado desde la Etapa 1:
 - El propio negocio ve y prende/apaga sus módulos disponibles
   (`GET`/`PATCH /feature-flags`) y su plan + uso actual (`GET /plan`).
 
+Implementado en Etapa 5 (detalle completo en
+[`docs/09-SUSCRIPCIONES-MERCADO-PAGO.md`](docs/09-SUSCRIPCIONES-MERCADO-PAGO.md)):
+
+- `MercadoPagoService` encapsulado (única cuenta, la de la plataforma —
+  cobra la suscripción SaaS a cada negocio, no confundir con pagos de
+  clientes de la Etapa 15) — forma del endpoint y del algoritmo de firma
+  verificados contra documentación oficial, no inventados.
+- Elegir/cambiar de plan arranca un trial de 14 días y sincroniza
+  `Tenant.planId` con la suscripción (para que Feature Flags/límites de
+  plan de la Etapa 4 vean siempre el plan vigente).
+- Checkout real vía Checkout Pro; el comprador nunca ingresa datos de
+  tarjeta en el dominio propio.
+- Webhook con validación de firma (rechaza notificaciones falsas) e
+  idempotencia real por constraint único — una notificación reenviada
+  nunca duplica un pago ni extiende el período dos veces.
+- `GET /subscription` calcula días restantes y "por vencer" siempre con la
+  fecha del servidor, nunca la del cliente.
+- SUPER ADMIN ve el estado de las suscripciones de todos los negocios.
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
 El resto de los módulos de negocio (clientes, turnos, ventas, inventario,
@@ -98,6 +121,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 | [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md) | Orden de las próximas etapas y checklist de revisión por etapa |
 | [`docs/07-SUPER-ADMIN.md`](docs/07-SUPER-ADMIN.md) | Etapa 3: separación de dominios de auth, MFA obligatorio, gestión de negocios, soporte, comunicaciones |
 | [`docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md`](docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md) | Etapa 4: FeatureFlagsService, FeatureFlagGuard, PlanLimitsGuard, gestión de planes/flags |
+| [`docs/09-SUSCRIPCIONES-MERCADO-PAGO.md`](docs/09-SUSCRIPCIONES-MERCADO-PAGO.md) | Etapa 5: MercadoPagoService, checkout, webhook idempotente, trial, vencimientos |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -113,7 +137,6 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 5 del roadmap: Suscripciones + Mercado Pago (billing
-de la propia plataforma — checkout, webhooks, idempotencia, estados de
-suscripción calculados siempre con la fecha del servidor), según el detalle
-de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 6 del roadmap: Clientes (CRM) — el primer módulo de
+negocio "de verdad" (turnos, ventas, etc. dependen de que exista Cliente),
+según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

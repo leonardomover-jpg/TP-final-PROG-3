@@ -19,6 +19,9 @@ import { SupportModule } from './support/support.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { PlanLimitsModule } from './plan-limits/plan-limits.module';
 import { PlanInfoModule } from './plan-info/plan-info.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { MercadoPagoWebhookModule } from './webhooks/mercado-pago/mercado-pago-webhook.module';
+import { PlatformAdminSubscriptionsModule } from './platform-admin/subscriptions/platform-admin-subscriptions.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from './auth/guards/permissions.guard';
 
@@ -39,6 +42,8 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     FeatureFlagsModule,
     PlanLimitsModule,
     PlanInfoModule,
+    SubscriptionsModule,
+    MercadoPagoWebhookModule,
     PlatformAdminAuthModule,
     PlatformAdminTenantsModule,
     PlatformAdminAuditModule,
@@ -46,6 +51,7 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     PlatformAdminCommunicationsModule,
     PlatformAdminPlansModule,
     PlatformAdminFeatureFlagsModule,
+    PlatformAdminSubscriptionsModule,
   ],
   providers: [
     // Orden importa: primero rate limiting, después autenticación (JWT),

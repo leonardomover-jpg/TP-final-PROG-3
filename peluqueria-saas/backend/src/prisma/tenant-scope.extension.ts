@@ -110,6 +110,11 @@ export function tenantScopeExtension(tenantId: string) {
             args.where = { ...args.where, tenantId } as typeof args.where;
             return query(args);
           },
+          async upsert({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            args.create = { ...args.create, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
         },
         tenantFeatureFlag: {
           async findMany({ args, query }) {

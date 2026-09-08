@@ -220,6 +220,7 @@ model Plan {
   tenants       Tenant[]
   features      PlanFeature[]
   communications Communication[]
+  subscriptions Subscription[]
 }
 
 model FeatureFlag {
@@ -265,6 +266,7 @@ model Subscription {
   tenantId           String    @unique
   tenant             Tenant    @relation(fields: [tenantId], references: [id])
   planId             String
+  plan               Plan      @relation(fields: [planId], references: [id])
   status             String    @default("trial") // trial | active | past_due | expiring_soon | suspended | cancelled
   trialEndsAt        DateTime?
   currentPeriodStart DateTime

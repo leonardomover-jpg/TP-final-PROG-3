@@ -64,9 +64,19 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       modelo ya estaba diseñado desde la Etapa 1. 47 tests en la suite
       completa (8 nuevos). Detalle en
       `docs/08-PLANES-Y-FEATURE-FLAGS-CODIGO.md`.
-- [ ] **Etapa 5 — Suscripciones + Mercado Pago (billing de la plataforma)**:
-      checkout de suscripción, webhooks, estados (trial/activa/vencida),
-      idempotencia, historial de pagos.
+- [x] **Etapa 5 — Suscripciones + Mercado Pago (billing de la plataforma)**:
+      `MercadoPagoService` encapsulado (Checkout Pro real, forma verificada
+      contra documentación oficial — ver doc `09` §3), elegir/cambiar plan
+      (trial de 14 días + `Tenant.planId` sincronizado), checkout real,
+      webhook con validación de firma HMAC-SHA256 + idempotencia real por
+      constraint único (no por "check antes de insertar"), suscripciones
+      visibles para SUPER ADMIN. `expiringSoon`/vencimiento calculados
+      siempre con fecha del servidor. El downgrade automático por
+      vencimiento y el procesamiento del webhook en background quedan para
+      cuando exista infraestructura de jobs (documentado como decisión de
+      scope, no como olvido). 53 tests en la suite completa (6 nuevos).
+      Detalle en `docs/09-SUSCRIPCIONES-MERCADO-PAGO.md` (incluye un bug
+      real de scoping de NestJS encontrado y corregido en esta etapa).
 - [ ] **Etapa 6 — Clientes (CRM)**: alta/edición, ficha con historial
       (placeholder hasta que existan Turnos/Ventas), notas internas,
       soft delete.
@@ -111,25 +121,21 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-La Etapa 5 (Suscripciones + Mercado Pago — billing de la propia plataforma,
-doc `03` §4.7/§4.8) arranca con:
+La Etapa 6 (Clientes — CRM) arranca con:
 
-1. `SubscriptionService`: alta de suscripción al registrar/asignar un plan
-   (`trial` por defecto), cálculo de `expiring_soon`/`past_due` siempre con
-   la fecha del servidor (punto 13 del pedido, nunca la del cliente).
-2. Integración con Mercado Pago usando exclusivamente los mecanismos
-   oficiales (Checkout Pro/Bricks) — antes de tocar código, releer la
-   documentación oficial vigente (punto 94: nunca inventar endpoints).
-3. Endpoint de webhook (`POST /webhooks/mercado-pago`): validación de
-   firma, idempotencia por `(provider, providerPaymentId)` — el
-   `@@unique` correspondiente ya existe desde la Etapa 1 en
-   `SubscriptionPayment` — y procesamiento vía job en cola, nunca
-   síncronamente en el handler (punto 65/66).
-4. Onboarding: forzar selección de plan al registrar un negocio (hoy
-   `POST /auth/register-tenant` no pide plan — ver doc `08` §5, decisión de
-   scope de la Etapa 4 que esta etapa cierra).
-5. Endpoints de negocio para ver el estado de su propia suscripción y
-   pagos históricos.
-6. Tests: webhook duplicado no duplica el pago (ya cubierto en el modelo
-   desde la Etapa 1, falta el flujo real); suscripción vencida degrada el
-   acceso; el contador de días usa la fecha del servidor.
+1. Modelo `Client` tenant-scoped: datos personales, preferencias, estado,
+   soft delete (mismo patrón que `User`/`Branch` — doc `02` §6). Se agrega
+   al `tenant-scope.extension.ts` como los modelos tenant-scoped ya
+   existentes.
+2. CRUD completo (`clientes.ver/crear/editar/eliminar`, permisos ya
+   seedeados desde la Etapa 2) + `PlanLimitsGuard` con
+   `@LimitResource('clients')` (el `switch` de `PlanLimitsService` ya está
+   preparado para este caso desde la Etapa 4, doc `08` §5).
+3. Ficha del cliente (placeholder de historial): turnos/ventas/puntos van a
+   ir aaadiéndose ahí a medida que existan esos módulos — por ahora,
+   datos personales + notas internas.
+4. Notas internas con control de quién puede verlas (permiso separado si
+   hace falta, a definir según el pedido — punto 25: "respetar privacidad y
+   permisos").
+5. Tests: aislamiento entre tenants (mismo patrón que `tenant-isolation.spec.ts`),
+   límite de plan por cantidad de clientes, soft delete conserva historial.

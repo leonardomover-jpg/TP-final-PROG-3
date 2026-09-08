@@ -60,6 +60,13 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
     module: 'feature_flags',
     description: 'Activar/desactivar módulos opcionales del negocio',
   },
+
+  { key: 'suscripcion.ver', module: 'suscripcion', description: 'Ver el estado de la suscripción del negocio' },
+  {
+    key: 'suscripcion.gestionar',
+    module: 'suscripcion',
+    description: 'Elegir/cambiar de plan y generar pagos de la suscripción',
+  },
 ];
 
 // Catálogo inicial de módulos opcionales (punto 10 del pedido, sección

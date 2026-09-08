@@ -139,11 +139,27 @@ export class PlatformAdminTenantsService {
       throw new BadRequestException('El plan indicado no existe.');
     }
 
-    const updated = await this.prisma.tenant.update({
-      where: { id },
-      data: { planId },
-      include: { plan: true },
-    });
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    // Se mantiene la Subscription sincronizada con Tenant.planId (Etapa 5):
+    // si el negocio no tenía suscripción todavía, arranca en trial; si ya
+    // tenía una, solo se le cambia el plan y se conserva el ciclo de
+    // facturación vigente.
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.tenant.update({ where: { id }, data: { planId }, include: { plan: true } }),
+      this.prisma.subscription.upsert({
+        where: { tenantId: id },
+        create: {
+          tenantId: id,
+          planId,
+          status: 'trial',
+          trialEndsAt: trialEnd,
+          currentPeriodStart: now,
+          currentPeriodEnd: trialEnd,
+        },
+        update: { planId },
+      }),
+    ]);
     await this.prisma.auditLog.create({
       data: {
         tenantId: id,
