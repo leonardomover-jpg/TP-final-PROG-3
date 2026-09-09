@@ -327,12 +327,28 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       (no tenía test explícito), mass assignment y fuga de detalle
       técnico en errores. 210 tests en la suite completa (8 nuevos).
       Detalle en `docs/27-SEGURIDAD-HARDENING.md`.
-- [ ] **Etapa 24 — Backups**: automatización, verificación por restauración
-      real (no solo "se generó el archivo"), registro de backups.
+- [x] **Etapa 24 — Backups**: `model Backup` (a nivel plataforma, sin
+      `tenantId` — un dump cubre todos los tenants a la vez).
+      `backup-runner.ts` (funciones puras, `pg_dump`/`psql`/`createdb`/
+      `dropdb` vía `execFile` con argumentos como array, nunca
+      interpolación) hace dump real + checksum SHA-256, y una
+      verificación REAL por restauración: crea una base descartable,
+      restaura el dump ahí, compara conteos de `Tenant`/`User` contra la
+      base origen, y la borra pase lo que pase — "no solo 'se generó el
+      archivo'" del roadmap. `PlatformAdminBackupsService.run()` es el
+      mismo flujo que invocan tanto `POST /platform-admin/backups/run`
+      (manual) como `scripts/run-backup.ts`/`npm run backup:run`
+      (pensado para un cron externo del SO o de la plataforma de deploy
+      — mismo criterio de "no hay Jobs en background todavía" de las
+      Etapas 16/17: la automatización real se agenda afuera). `GET
+      /platform-admin/backups` (paginado) y `GET
+      /platform-admin/backups/:id` completan el registro. 215 tests en
+      la suite completa (5 nuevos). Detalle en `docs/28-BACKUPS.md`.
 - [ ] **Etapa 25 — Testing end-to-end y de carga**: escenarios de
       escalabilidad (10 → 10.000 negocios simulados).
 - [ ] **Etapa 26 — Deploy y Documentación final**.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 24 del roadmap: Backups.
+Continuar con la Etapa 25 del roadmap: Testing end-to-end y de carga
+(escenarios de escalabilidad, 10 → 10.000 negocios simulados).

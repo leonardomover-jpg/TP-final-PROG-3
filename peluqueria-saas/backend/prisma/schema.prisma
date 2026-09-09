@@ -1153,3 +1153,23 @@ model Deposit {
 
   @@index([tenantId])
 }
+
+// Backup de TODA la base (Etapa 24) — no es tenant-scoped: un dump con
+// pg_dump cubre todos los tenants a la vez, no tiene sentido acotarlo a
+// uno. Registrado y gestionado únicamente desde platform-admin
+// (PrismaService crudo, mismo criterio que el resto de platform-admin/*).
+model Backup {
+  id            String    @id @default(cuid())
+  filename      String
+  sizeBytes     Int
+  checksumSha256 String
+  // pending -> completed -> verified (feliz) | verification_failed
+  // pending -> failed (el pg_dump en sí falló, nunca llegó a verificarse)
+  status        String    @default("pending")
+  errorMessage  String?
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  verifiedAt    DateTime?
+
+  @@index([startedAt])
+}

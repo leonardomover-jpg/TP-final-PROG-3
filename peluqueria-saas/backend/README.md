@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 23)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 24)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -21,8 +21,9 @@ Estadísticas y Reportes — CSV/PDF/Excel (Etapa 20), e IA — insights sobre
 estadísticas y clientes (Etapa 21, opcional), y Auditoría avanzada y
 Observabilidad — AuditInterceptor global, GET /audit, GET /health
 (Etapa 22), y Seguridad hardening — RLS de Postgres, helmet, pentest
-interno (Etapa 23). Ver `../docs/` para el diseño completo (arquitectura,
-base de datos, seguridad, roadmap).
+interno (Etapa 23), y Backups — pg_dump + checksum + verificación real
+por restauración (Etapa 24). Ver `../docs/` para el diseño completo
+(arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -588,6 +589,23 @@ curl -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/v1/branches \
 psql "$DATABASE_URL" -c "SELECT tablename, policyname FROM pg_policies WHERE schemaname='public';"
 ```
 
+## Flujo mínimo de prueba manual — Backups (Etapa 24)
+
+```bash
+# 1) Correr un backup manualmente (SUPER ADMIN): dump real + checksum +
+#    verificación por restauración en una base descartable
+curl -X POST http://localhost:3000/api/v1/platform-admin/backups/run \
+  -H "Authorization: Bearer <accessToken de SUPER ADMIN>"
+# -> { "status": "verified", "sizeBytes": ..., "checksumSha256": "...", ... }
+
+# 2) Listar backups corridos
+curl "http://localhost:3000/api/v1/platform-admin/backups" \
+  -H "Authorization: Bearer <accessToken de SUPER ADMIN>"
+
+# 3) Lo mismo pero disparado como lo haría un cron externo, sin HTTP
+npm run backup:run
+```
+
 ## Estructura
 
 ```
@@ -643,7 +661,8 @@ src/
 │   ├── plans/                                  # CRUD de planes + asociación de feature flags
 │   ├── feature-flags/                           # catálogo global de feature flags
 │   ├── holidays/                                 # catálogo global de feriados argentinos
-│   └── subscriptions/                            # ver suscripciones/vencimientos de todos los negocios
+│   ├── subscriptions/                            # ver suscripciones/vencimientos de todos los negocios
+│   └── backups/                                   # pg_dump + checksum + verificación real por restauración (Etapa 24)
 ├── public-booking/                                 # catálogo/disponibilidad/reserva sin login (Etapa 18, solo backend) + QR
 ├── reports/                                          # dashboard de métricas + export CSV/PDF/Excel (Etapa 20)
 ├── ai/                                                 # GET /ai/insights — resumen generado por IA (Etapa 21, opcional)
@@ -682,8 +701,13 @@ test/
 ├── audit.spec.ts                                   # AuditInterceptor global, GET /audit, permisos, aislamiento
 ├── health.spec.ts                                  # GET /health
 ├── security-hardening.spec.ts                      # pentest interno: JWT expirado/manipulado, helmet, mass assignment, fuga de errores
+├── backups.spec.ts                                 # pg_dump + checksum + verificación real por restauración, listado/detalle, 401
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
+
+`scripts/run-backup.ts` (`npm run backup:run`, Etapa 24): punto de entrada
+sin HTTP para que un cron externo dispare `PlatformAdminBackupsService.run()`
+— ver `../docs/28-BACKUPS.md` §5.
 
 ## Por qué el aislamiento multi-tenant es "imposible de olvidar"
 

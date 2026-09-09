@@ -19,6 +19,8 @@ peluqueria-saas/backend/.env
 peluqueria-saas/backend/prisma/dev.db
 peluqueria-saas/backend/prisma/dev.db-journal
 peluqueria-saas/backend/*.tsbuildinfo
+# Dumps generados por pg_dump (Etapa 24) — nunca al repo, son datos reales
+peluqueria-saas/backend/backups/
 peluqueria-saas/frontend/node_modules/
 peluqueria-saas/frontend/dist/
 

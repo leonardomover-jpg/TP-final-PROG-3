@@ -136,8 +136,16 @@ repositorio — no comparten código, base de datos ni dependencias.
   `helmet` (cabeceras de seguridad). Pentest interno: checklist del doc
   04 §10 verificado ítem por ítem, con cobertura nueva de JWT expirado/
   manipulado que no existía.
+- ✅ **Etapa 24 — Backups**: `pg_dump` real + checksum SHA-256 + una
+  verificación REAL por restauración (base descartable, restaura el
+  dump ahí, compara conteos de `Tenant`/`User` contra la base origen, y
+  la borra pase lo que pase) — no solo "se generó el archivo". El mismo
+  flujo (`PlatformAdminBackupsService.run()`) lo invocan tanto el
+  endpoint manual (`POST /platform-admin/backups/run`) como
+  `scripts/run-backup.ts`/`npm run backup:run`, pensado para un cron
+  externo del sistema operativo o de la plataforma de deploy.
 
-210 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+215 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -352,6 +360,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/25-IA.md`](docs/25-IA.md) | Etapa 21: insights generados por IA sobre estadísticas/clientes, credenciales de plataforma, nunca cruza tenants |
 | [`docs/26-AUDITORIA-OBSERVABILIDAD.md`](docs/26-AUDITORIA-OBSERVABILIDAD.md) | Etapa 22: AuditInterceptor global, GET /audit propio del negocio, GET /health |
 | [`docs/27-SEGURIDAD-HARDENING.md`](docs/27-SEGURIDAD-HARDENING.md) | Etapa 23: RLS de Postgres (activado sin FORCE, con la decisión documentada), helmet, pentest interno |
+| [`docs/28-BACKUPS.md`](docs/28-BACKUPS.md) | Etapa 24: pg_dump + checksum + verificación real por restauración (base descartable), registro de backups |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
