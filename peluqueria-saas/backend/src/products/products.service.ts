@@ -16,7 +16,12 @@ export class ProductsService {
 
   async findAll(query: ListProductsQueryDto) {
     const products = await this.tenantPrisma.client.product.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        // Productos de ESA sucursal + los compartidos (branchId null) —
+        // nunca los de otra sucursal puntual (Etapa 19).
+        ...(query.branchId && { OR: [{ branchId: query.branchId }, { branchId: null }] }),
+      },
       orderBy: { createdAt: 'desc' },
     });
     // stock <= minStock no se puede expresar como filtro de Prisma (compara
@@ -39,11 +44,22 @@ export class ProductsService {
     return product;
   }
 
+  private async assertBranchBelongsToTenant(branchId: string) {
+    const branch = await this.tenantPrisma.client.branch.findUnique({ where: { id: branchId } });
+    if (!branch || branch.deletedAt) {
+      throw new BadRequestException('La sucursal indicada no existe en este negocio.');
+    }
+  }
+
   async create(dto: CreateProductDto) {
+    if (dto.branchId) {
+      await this.assertBranchBelongsToTenant(dto.branchId);
+    }
     try {
       return await this.tenantPrisma.client.product.create({
         data: {
           tenantId: this.tenantPrisma.tenantId,
+          branchId: dto.branchId,
           name: dto.name,
           sku: dto.sku,
           description: dto.description,
@@ -65,8 +81,12 @@ export class ProductsService {
 
   async update(id: string, dto: UpdateProductDto) {
     await this.assertExists(id);
+    if (dto.branchId) {
+      await this.assertBranchBelongsToTenant(dto.branchId);
+    }
 
     const data: Prisma.ProductUpdateInput = {
+      ...(dto.branchId && { branch: { connect: { id: dto.branchId } } }),
       ...(dto.name && { name: dto.name }),
       ...(dto.sku !== undefined && { sku: dto.sku }),
       ...(dto.description !== undefined && { description: dto.description }),

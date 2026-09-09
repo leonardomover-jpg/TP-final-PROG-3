@@ -1,4 +1,4 @@
-import { IsIn, IsOptional } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class ListProductsQueryDto {
   // Alertas de stock mínimo (punto de la Etapa 11 del roadmap): filtra a
@@ -9,4 +9,11 @@ export class ListProductsQueryDto {
   @IsOptional()
   @IsIn(['true', 'false'])
   lowStock?: string;
+
+  // Etapa 19: productos de ESA sucursal + los compartidos (branchId
+  // null) — nunca los de OTRA sucursal puntual. Sin este filtro, se
+  // listan todos (compartidos + de cualquier sucursal), igual que antes.
+  @IsOptional()
+  @IsString()
+  branchId?: string;
 }

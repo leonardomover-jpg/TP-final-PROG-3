@@ -22,6 +22,10 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
   { key: 'sucursales.crear', module: 'sucursales', description: 'Crear sucursales' },
   { key: 'sucursales.editar', module: 'sucursales', description: 'Editar sucursales' },
   { key: 'sucursales.eliminar', module: 'sucursales', description: 'Eliminar sucursales' },
+  // Etapa 19: sin este permiso, un usuario solo puede operar (crear turnos,
+  // ventas, abrir caja) en las sucursales a las que UserBranch lo asignó
+  // (doc `23-SUCURSALES.md`) — BranchAccessGuard.
+  { key: 'sucursales.todas', module: 'sucursales', description: 'Operar en todas las sucursales, sin restricción de asignación' },
 
   // Permisos de módulos que se implementan en etapas siguientes (doc
   // 06-ROADMAP): se seedean ahora porque el catálogo de permisos es único y

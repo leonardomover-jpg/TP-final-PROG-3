@@ -126,6 +126,14 @@ export class SalesService {
         if (!product || product.deletedAt) {
           throw new BadRequestException('Alguno de los productos indicados no existe en este negocio.');
         }
+        // Etapa 19: un producto con stock exclusivo de una sucursal no se
+        // puede vender desde otra — branchId null (compartido) se puede
+        // vender desde cualquiera, mismo comportamiento que antes de esta etapa.
+        if (product.branchId && product.branchId !== dto.branchId) {
+          throw new BadRequestException(
+            `"${product.name}" pertenece a otra sucursal y no se puede vender desde esta.`,
+          );
+        }
         if (product.stock < item.quantity) {
           throw new BadRequestException(
             `Stock insuficiente de "${product.name}" (disponible: ${product.stock}, pedido: ${item.quantity}).`,

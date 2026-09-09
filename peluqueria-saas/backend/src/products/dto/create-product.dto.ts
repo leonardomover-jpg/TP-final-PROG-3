@@ -1,6 +1,13 @@
 import { IsIn, IsInt, IsNumber, IsOptional, IsPositive, IsString, Min, MaxLength, MinLength } from 'class-validator';
 
 export class CreateProductDto {
+  // Sin branchId: stock compartido entre todas las sucursales del negocio
+  // (default, Etapa 19). Con branchId: stock exclusivo de esa sucursal —
+  // una Venta de otra sucursal no puede consumirlo (ver SalesService.create).
+  @IsOptional()
+  @IsString()
+  branchId?: string;
+
   @IsString()
   @MinLength(2)
   @MaxLength(80)

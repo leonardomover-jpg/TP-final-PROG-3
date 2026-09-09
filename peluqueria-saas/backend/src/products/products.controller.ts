@@ -7,6 +7,7 @@ import { ListProductsQueryDto } from './dto/list-products.query.dto';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { FeatureFlagGuard } from '../feature-flags/guards/feature-flag.guard';
 import { RequiresFeature } from '../feature-flags/decorators/requires-feature.decorator';
+import { BranchAccessGuard } from '../branches/guards/branch-access.guard';
 
 // Primer módulo opcional gateado de verdad por FeatureFlagGuard (Etapa 4):
 // sin el feature flag "inventory" habilitado para el negocio, nada de acá
@@ -30,12 +31,14 @@ export class ProductsController {
   }
 
   @RequirePermissions('productos.gestionar')
+  @UseGuards(BranchAccessGuard)
   @Post()
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
   }
 
   @RequirePermissions('productos.gestionar')
+  @UseGuards(BranchAccessGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);

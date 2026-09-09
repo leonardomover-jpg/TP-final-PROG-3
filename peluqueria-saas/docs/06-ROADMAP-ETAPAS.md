@@ -262,8 +262,19 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       pública real y PWA quedan explícitamente diferidas hasta que exista
       un proyecto de frontend. 172 tests en la suite completa (11
       nuevos). Detalle en `docs/22-PAGINA-PUBLICA-QR-PWA.md`.
-- [ ] **Etapa 19 — Sucursales (multi-sucursal completo)**: permisos por
-      sucursal, caja/inventario por sucursal.
+- [x] **Etapa 19 — Sucursales (multi-sucursal completo)**: permisos por
+      sucursal, caja/inventario por sucursal. Caja/Venta ya tenían
+      `branchId` propio desde la Etapa 12 — lo que faltaba era restringir
+      qué sucursales puede operar cada usuario. `BranchAccessGuard` (nuevo)
+      exige que el usuario esté asignado vía `UserBranch` (Etapa 2, ya
+      existía pero sin uso) a la sucursal del `branchId` que manda cada
+      alta, salvo que tenga el nuevo permiso `sucursales.todas` — el dueño
+      (rol "Administrador del negocio") lo tiene automáticamente. Aplicado
+      en `create`/`open` de turnos, lista de espera, ventas, caja y
+      productos. `Product.branchId` (nuevo, nullable) permite stock
+      exclusivo de una sucursal (null = compartido, default); `SalesService`
+      rechaza vender un producto de otra sucursal (400). 181 tests en la
+      suite completa (9 nuevos). Detalle en `docs/23-SUCURSALES.md`.
 - [ ] **Etapa 20 — Dashboard, Estadísticas y Reportes (PDF/CSV/Excel)**.
 - [ ] **Etapa 21 — IA (opcional)**.
 - [ ] **Etapa 22 — Auditoría avanzada y Observabilidad** (dashboards de
@@ -279,5 +290,5 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 19 del roadmap: Sucursales (multi-sucursal
-completo).
+Continuar con la Etapa 20 del roadmap: Dashboard, Estadísticas y Reportes
+(PDF/CSV/Excel).

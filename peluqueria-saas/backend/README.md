@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 18)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 19)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -13,9 +13,10 @@ internos de stock bajo y límite de plan (Etapa 14), Mercado Pago para
 clientes — integraciones por negocio + señas de turnos (Etapa 15),
 WhatsApp (Meta Cloud API) — confirmaciones/cancelaciones/recordatorios por
 negocio (Etapa 16), Instagram / Facebook (Meta) — mensajería por negocio
-(Etapa 17), y Página pública + QR (Etapa 18, solo backend: catálogo,
+(Etapa 17), Página pública + QR (Etapa 18, solo backend: catálogo,
 disponibilidad y reserva sin login + QR — sin proyecto de frontend en este
-repo, la página HTML y la PWA quedan diferidas). Ver `../docs/` para el
+repo, la página HTML y la PWA quedan diferidas), y Sucursales — permisos
+por sucursal + inventario por sucursal (Etapa 19). Ver `../docs/` para el
 diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
@@ -481,6 +482,42 @@ curl -X POST http://localhost:3000/api/v1/public/<slug>/appointments \
 curl http://localhost:3000/api/v1/public/<slug>/qr -o qr.png
 ```
 
+## Flujo mínimo de prueba manual — Sucursales (Etapa 19)
+
+```bash
+# 1) Crear una segunda sucursal
+curl -X POST http://localhost:3000/api/v1/branches \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Sucursal Sur"}'
+
+# 2) Crear un rol SIN sucursales.todas (el dueño la tiene automáticamente,
+#    no hace falta crearla para él)
+curl -X POST http://localhost:3000/api/v1/roles \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Staff Sucursal","permissionKeys":["turnos.crear","turnos.ver","ventas.crear","caja.abrir"]}'
+
+# 3) Crear el usuario asignado SOLO a la sucursal principal (branchIds)
+curl -X POST http://localhost:3000/api/v1/users \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Staff","lastName":"Sucursal","email":"staff@negocio.com","password":"Secreta123!","roleIds":["<roleId>"],"branchIds":["<branchIdPrincipal>"]}'
+
+# 4) Ese usuario intentando crear un turno en la OTRA sucursal -> 403
+curl -X POST http://localhost:3000/api/v1/appointments \
+  -H "Authorization: Bearer <accessToken del staff>" \
+  -H "Content-Type: application/json" \
+  -d '{"branchId":"<idOtraSucursal>", ...}'
+
+# 5) Producto exclusivo de una sucursal (branchId) — vender desde otra
+#    sucursal responde 400 "pertenece a otra sucursal"
+curl -X POST http://localhost:3000/api/v1/products \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Shampoo","price":3000,"stock":10,"branchId":"<branchIdPrincipal>"}'
+```
+
 ## Estructura
 
 ```
@@ -490,7 +527,7 @@ src/
 ├── users/                     # CRUD de usuarios (tenant-scoped, soft delete, PlanLimitsGuard)
 ├── roles/                      # CRUD de roles (sistema + propios del negocio)
 ├── permissions/                 # catálogo global de permisos (solo lectura)
-├── branches/                     # CRUD de sucursales (PlanLimitsGuard)
+├── branches/                     # CRUD de sucursales (PlanLimitsGuard) + BranchAccessGuard (Etapa 19)
 ├── clients/                        # CRUD de clientes (CRM), notas internas, ficha (PlanLimitsGuard)
 ├── professionals/                   # CRUD de profesionales, horario semanal propio, vínculo a User
 ├── services/                         # CRUD de servicios, categoría, duración/precio, profesionales habilitados
@@ -565,6 +602,7 @@ test/
 ├── products.spec.ts                                # gate de feature flag, stock, compras, aislamiento
 ├── sales.spec.ts                                   # ventas mixtas, pagos combinados, arqueo, comisiones
 ├── public-booking.spec.ts                          # catálogo/disponibilidad/reserva sin login, límite de plan, QR, aislamiento
+├── branches-multi.spec.ts                          # BranchAccessGuard (UserBranch/sucursales.todas), inventario por sucursal
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments.query.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { BranchAccessGuard } from '../branches/guards/branch-access.guard';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -26,6 +27,7 @@ export class AppointmentsController {
   }
 
   @RequirePermissions('turnos.crear')
+  @UseGuards(BranchAccessGuard)
   @Post()
   create(@Body() dto: CreateAppointmentDto) {
     return this.appointmentsService.create(dto);

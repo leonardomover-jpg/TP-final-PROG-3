@@ -102,8 +102,15 @@ repositorio — no comparten código, base de datos ni dependencias.
   reserva sin login (respeta el límite de clientes del plan) y QR en PNG
   real. Página HTML y PWA quedan explícitamente diferidas — ver
   `docs/22-PAGINA-PUBLICA-QR-PWA.md`.
+- ✅ **Etapa 19 — Sucursales (multi-sucursal completo)**: `BranchAccessGuard`
+  (nuevo) exige que cada usuario esté asignado (`UserBranch`, Etapa 2) a la
+  sucursal donde crea un turno/venta/caja/producto, salvo que tenga el
+  nuevo permiso `sucursales.todas` (el dueño lo tiene automáticamente).
+  `Product.branchId` (nuevo, opcional) permite stock exclusivo de una
+  sucursal — una Venta de otra sucursal no puede consumirlo. Caja/Venta ya
+  tenían `branchId` propio desde la Etapa 12.
 
-172 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+181 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -313,6 +320,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/20-WHATSAPP.md`](docs/20-WHATSAPP.md) | Etapa 16: WhatsApp Business por negocio, confirmaciones/cancelaciones/recordatorios, webhook por tenant |
 | [`docs/21-INSTAGRAM-FACEBOOK.md`](docs/21-INSTAGRAM-FACEBOOK.md) | Etapa 17: Facebook Messenger / Instagram Direct por negocio, mensajes entrantes + respuesta manual, webhook por tenant |
 | [`docs/22-PAGINA-PUBLICA-QR-PWA.md`](docs/22-PAGINA-PUBLICA-QR-PWA.md) | Etapa 18 (solo backend): catálogo público, disponibilidad, reserva sin login, QR — página HTML y PWA diferidas (sin proyecto de frontend) |
+| [`docs/23-SUCURSALES.md`](docs/23-SUCURSALES.md) | Etapa 19: BranchAccessGuard (permisos por sucursal vía UserBranch), Product.branchId (inventario por sucursal) |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -328,5 +336,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 19 del roadmap: Sucursales (multi-sucursal
-completo), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 20 del roadmap: Dashboard, Estadísticas y Reportes
+(PDF/CSV/Excel), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { CancelSaleDto } from './dto/cancel-sale.dto';
 import { ListSalesQueryDto } from './dto/list-sales.query.dto';
 import { CommissionsQueryDto } from './dto/commissions.query.dto';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { BranchAccessGuard } from '../branches/guards/branch-access.guard';
 
 @Controller('sales')
 export class SalesController {
@@ -33,6 +34,7 @@ export class SalesController {
   }
 
   @RequirePermissions('ventas.crear')
+  @UseGuards(BranchAccessGuard)
   @Post()
   create(@Body() dto: CreateSaleDto) {
     return this.salesService.create(dto);
