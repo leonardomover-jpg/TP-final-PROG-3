@@ -298,8 +298,20 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       modelo se arma exclusivamente con datos ya acotados al tenant del
       JWT. 195 tests en la suite completa (5 nuevos). Detalle en
       `docs/25-IA.md`.
-- [ ] **Etapa 22 — Auditoría avanzada y Observabilidad** (dashboards de
-      logs/métricas, más allá del `AuditLog` ya modelado en Etapa 1).
+- [x] **Etapa 22 — Auditoría avanzada y Observabilidad**: `AuditLog`
+      (Etapa 1) solo lo escribían a mano unas pocas acciones puntuales
+      (login, registro de tenant, webhook MP, algunas de SUPER ADMIN) —
+      el resto del sistema no dejaba rastro, y ningún negocio podía ver
+      su PROPIA auditoría (solo SUPER ADMIN, de todos los tenants).
+      `AuditInterceptor` (nuevo, global) cubre TODO endpoint autenticado:
+      cualquier mutación exitosa genera una entrada genérica (actor +
+      acción + entidad + ip), complementando — no reemplazando — los
+      logs semánticos con `beforeData`/`afterData` ya existentes.
+      `GET /audit` (nuevo, permiso `auditoria.ver`) le da a cada negocio
+      visibilidad de su propio registro, filtrado y paginado. `GET
+      /health` (nuevo, público) verifica conectividad real a Postgres.
+      202 tests en la suite completa (7 nuevos). Detalle en
+      `docs/26-AUDITORIA-OBSERVABILIDAD.md`.
 - [ ] **Etapa 23 — Seguridad hardening**: RLS de Postgres activado (ver doc
       `02`), pentest interno (checklist del doc `04` sección 10). El rate
       limiting global ya se implementó en la Etapa 3 (`@nestjs/throttler`).
@@ -311,5 +323,4 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 22 del roadmap: Auditoría avanzada y
-Observabilidad.
+Continuar con la Etapa 23 del roadmap: Seguridad hardening.

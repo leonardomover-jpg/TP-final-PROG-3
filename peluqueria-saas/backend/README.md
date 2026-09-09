@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 21)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 22)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -18,8 +18,10 @@ disponibilidad y reserva sin login + QR — sin proyecto de frontend en este
 repo, la página HTML y la PWA quedan diferidas), y Sucursales — permisos
 por sucursal + inventario por sucursal (Etapa 19), y Dashboard,
 Estadísticas y Reportes — CSV/PDF/Excel (Etapa 20), e IA — insights sobre
-estadísticas y clientes (Etapa 21, opcional). Ver `../docs/` para el
-diseño completo (arquitectura, base de datos, seguridad, roadmap).
+estadísticas y clientes (Etapa 21, opcional), y Auditoría avanzada y
+Observabilidad — AuditInterceptor global, GET /audit, GET /health
+(Etapa 22). Ver `../docs/` para el diseño completo (arquitectura, base de
+datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -552,6 +554,24 @@ curl "http://localhost:3000/api/v1/ai/insights" \
 # -> { "insights": "1. ...\n2. ...", "basedOn": { "sales": {...}, "clients": {...}, ... } }
 ```
 
+## Flujo mínimo de prueba manual — Auditoría y Observabilidad (Etapa 22)
+
+```bash
+# 1) Salud del servicio (sin autenticación)
+curl http://localhost:3000/api/v1/health
+# -> { "status": "ok", "database": "ok", "uptimeSeconds": 123 }
+
+# 2) Cualquier mutación ya genera auditoría automática (ej. crear una
+#    sucursal) — no hace falta nada especial del lado del cliente.
+curl -X POST http://localhost:3000/api/v1/branches \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" -d '{"name":"Sucursal Norte"}'
+
+# 3) Ver el propio registro de auditoría
+curl "http://localhost:3000/api/v1/audit?entityType=branches" \
+  -H "Authorization: Bearer <accessToken del negocio>"
+```
+
 ## Estructura
 
 ```
@@ -611,6 +631,8 @@ src/
 ├── public-booking/                                 # catálogo/disponibilidad/reserva sin login (Etapa 18, solo backend) + QR
 ├── reports/                                          # dashboard de métricas + export CSV/PDF/Excel (Etapa 20)
 ├── ai/                                                 # GET /ai/insights — resumen generado por IA (Etapa 21, opcional)
+├── audit/                                              # AuditInterceptor global + GET /audit propio del negocio (Etapa 22)
+├── health/                                              # GET /health — conectividad real a la base (Etapa 22)
 ├── common/filters/                                 # manejo de errores (nunca se expone detalle técnico)
 └── app.module.ts                                    # wiring de guards globales + throttler
 
@@ -641,6 +663,8 @@ test/
 ├── branches-multi.spec.ts                          # BranchAccessGuard (UserBranch/sucursales.todas), inventario por sucursal
 ├── reports.spec.ts                                 # dashboard, export CSV/PDF/Excel, permisos, aislamiento
 ├── ai.spec.ts                                      # insights de IA (mockeado), flag, credenciales, aislamiento
+├── audit.spec.ts                                   # AuditInterceptor global, GET /audit, permisos, aislamiento
+├── health.spec.ts                                  # GET /health
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

@@ -121,8 +121,15 @@ repositorio — no comparten código, base de datos ni dependencias.
   Anthropic, credenciales de la plataforma, nunca por-tenant). El
   contexto que recibe el modelo se arma exclusivamente con datos ya
   acotados al tenant — nunca cruza negocios.
+- ✅ **Etapa 22 — Auditoría avanzada y Observabilidad**: `AuditInterceptor`
+  (nuevo, global) audita automáticamente cualquier mutación exitosa en
+  cualquier endpoint autenticado (antes solo un puñado de acciones
+  puntuales quedaban registradas), complementando los logs semánticos ya
+  existentes. `GET /audit` le da a cada negocio visibilidad de su propio
+  registro (antes solo SUPER ADMIN podía verlo). `GET /health` verifica
+  conectividad real a la base.
 
-195 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+202 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -335,6 +342,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/23-SUCURSALES.md`](docs/23-SUCURSALES.md) | Etapa 19: BranchAccessGuard (permisos por sucursal vía UserBranch), Product.branchId (inventario por sucursal) |
 | [`docs/24-DASHBOARD-REPORTES.md`](docs/24-DASHBOARD-REPORTES.md) | Etapa 20: dashboard de métricas + export de ventas/turnos en CSV/PDF/Excel |
 | [`docs/25-IA.md`](docs/25-IA.md) | Etapa 21: insights generados por IA sobre estadísticas/clientes, credenciales de plataforma, nunca cruza tenants |
+| [`docs/26-AUDITORIA-OBSERVABILIDAD.md`](docs/26-AUDITORIA-OBSERVABILIDAD.md) | Etapa 22: AuditInterceptor global, GET /audit propio del negocio, GET /health |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -350,5 +358,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 22 del roadmap: Auditoría avanzada y
-Observabilidad, según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 23 del roadmap: Seguridad hardening, según el
+detalle de `docs/06-ROADMAP-ETAPAS.md`.

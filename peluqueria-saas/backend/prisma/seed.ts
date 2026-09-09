@@ -101,6 +101,7 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
   { key: 'soporte.crear', module: 'soporte', description: 'Crear tickets de soporte' },
 
   { key: 'feature_flags.ver', module: 'feature_flags', description: 'Ver módulos disponibles para el negocio' },
+  { key: 'auditoria.ver', module: 'auditoria', description: 'Ver el registro de auditoría del negocio' },
   {
     key: 'feature_flags.gestionar',
     module: 'feature_flags',

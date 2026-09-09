@@ -34,6 +34,8 @@ import { MetaTenantWebhookModule } from './webhooks/meta-tenant/meta-tenant-webh
 import { PublicBookingModule } from './public-booking/public-booking.module';
 import { ReportsModule } from './reports/reports.module';
 import { AiModule } from './ai/ai.module';
+import { AuditModule } from './audit/audit.module';
+import { HealthModule } from './health/health.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -91,6 +93,8 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     PublicBookingModule,
     ReportsModule,
     AiModule,
+    AuditModule,
+    HealthModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,
