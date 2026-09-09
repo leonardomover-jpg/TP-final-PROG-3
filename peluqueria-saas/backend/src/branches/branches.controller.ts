@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { BranchesService } from './branches.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PlanLimitsGuard } from '../plan-limits/guards/plan-limits.guard';
 import { LimitResource } from '../plan-limits/decorators/limit-resource.decorator';
+import { SetScheduleDto } from '../common/dto/set-schedule.dto';
 
 @Controller('branches')
 export class BranchesController {
@@ -40,5 +41,11 @@ export class BranchesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.branchesService.remove(id);
+  }
+
+  @RequirePermissions('sucursales.editar')
+  @Put(':id/schedule')
+  setSchedule(@Param('id') id: string, @Body() dto: SetScheduleDto) {
+    return this.branchesService.setSchedule(id, dto);
   }
 }

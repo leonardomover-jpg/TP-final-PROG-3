@@ -40,8 +40,13 @@ repositorio — no comparten código, base de datos ni dependencias.
 - ✅ **Etapa 8 — Servicios**: CRUD completo tenant-scoped, categoría (tag),
   duración/precio, profesionales habilitados por servicio (relación M:N
   real, reemplazable, valida pertenencia al tenant de ambos extremos).
+- ✅ **Etapa 9 — Horarios**: horario semanal de la sucursal, excepciones
+  puntuales (sucursal o profesional), catálogo global de feriados
+  argentinos con override manual por negocio, y un endpoint de
+  disponibilidad que combina las tres fuentes para responder "¿abierto tal
+  día, y en qué horario?" — insumo directo de la Etapa 10 (Agenda).
 
-69 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+76 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -158,10 +163,25 @@ Implementado en Etapa 8 (detalle completo en
 - Sin límite de plan por cantidad de servicios a propósito: el modelo de
   planes no anticipó ese límite (no inventado sin un pedido concreto).
 
+Implementado en Etapa 9 (detalle completo en
+[`docs/13-HORARIOS.md`](docs/13-HORARIOS.md)):
+
+- Horario semanal de la sucursal (`PUT /branches/:id/schedule`), mismo
+  patrón que el horario propio de un profesional (Etapa 7).
+- Excepciones puntuales (`schedule/exceptions`): cierre o horario distinto
+  para una sucursal o un profesional en una fecha concreta.
+- Catálogo global de feriados argentinos gestionado por SUPER ADMIN
+  (`platform-admin/holidays`), con override manual por negocio — sin fila
+  propia, un feriado es no laborable por default.
+- `GET /schedule/availability`: combina excepción → feriado (con su
+  override) → horario semanal, en ese orden, para responder si un día
+  está abierto y en qué horario — el primer insumo real del motor de
+  turnos de la Etapa 10.
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
-El resto de los módulos de negocio (horarios, turnos, ventas, inventario,
-etc.) se implementan en las etapas siguientes, en el orden definido en
+El resto de los módulos de negocio (turnos, ventas, inventario, etc.) se
+implementan en las etapas siguientes, en el orden definido en
 [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
 
 ## Documentos
@@ -180,6 +200,7 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 | [`docs/10-CLIENTES.md`](docs/10-CLIENTES.md) | Etapa 6: modelo Client/ClientNote, CRUD, notas internas, ficha con historial placeholder, límite de plan |
 | [`docs/11-PROFESIONALES.md`](docs/11-PROFESIONALES.md) | Etapa 7: modelo Professional/ProfessionalSchedule, CRUD, horario semanal propio, vínculo opcional a User, límite de plan |
 | [`docs/12-SERVICIOS.md`](docs/12-SERVICIOS.md) | Etapa 8: modelo Service/ServiceProfessional, CRUD, categoría, duración/precio, profesionales habilitados |
+| [`docs/13-HORARIOS.md`](docs/13-HORARIOS.md) | Etapa 9: BranchSchedule, ScheduleException, catálogo de feriados con override, endpoint de disponibilidad combinada |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -195,7 +216,8 @@ etc.) se implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 9 del roadmap: Horarios — horario del negocio,
-horario por profesional (motor de disponibilidad sobre
-`ProfessionalSchedule`), excepciones, feriados argentinos con override
-manual, según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 10 del roadmap: Agenda y Turnos — motor de
+disponibilidad real (generación de slots sobre `GET
+/schedule/availability` + duración del servicio, sin superposición),
+estados del turno, lista de espera, señas, control de no-shows, según el
+detalle de `docs/06-ROADMAP-ETAPAS.md`.

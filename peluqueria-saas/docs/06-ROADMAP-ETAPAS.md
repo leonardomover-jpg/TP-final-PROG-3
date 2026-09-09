@@ -105,8 +105,21 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       extremos). Sin `PlanLimitsGuard` a propósito — `Plan` no tiene
       `maxServices`, el pedido no anticipó ese límite. 69 tests en la
       suite completa (4 nuevos). Detalle en `docs/12-SERVICIOS.md`.
-- [ ] **Etapa 9 — Horarios**: horario del negocio, horario por profesional,
-      excepciones, feriados argentinos (con override manual por negocio).
+- [x] **Etapa 9 — Horarios**: `BranchSchedule` (horario semanal de la
+      sucursal, mismo shape que `ProfessionalSchedule` de la Etapa 7,
+      `PUT /branches/:id/schedule`), `ScheduleException` (excepción
+      puntual para una sucursal o un profesional, cierre o horario
+      distinto), catálogo global de feriados argentinos gestionado por
+      SUPER ADMIN (`platform-admin/holidays`, seedeado con los 10
+      inamovibles de 2026 — los trasladables no se inventan sin decreto
+      confirmado, doc `13` §4) con override manual por negocio
+      (`TenantHolidayOverride`, default cerrado), y `GET
+      /schedule/availability` combinando las tres fuentes para responder
+      "¿abierto tal día, y en qué horario?" (permisos nuevos
+      `horarios.ver/gestionar`). El motor de disponibilidad real con
+      generación de slots y sin superposición con turnos ya tomados es de
+      la Etapa 10, que consume este cálculo. 76 tests en la suite completa
+      (7 nuevos). Detalle en `docs/13-HORARIOS.md`.
 - [ ] **Etapa 10 — Agenda y Turnos**: vistas día/semana/mes/lista, motor de
       disponibilidad (sin superposiciones), estados del turno, lista de
       espera, señas (dependiente de Mercado Pago para clientes — Etapa 15),
@@ -142,8 +155,9 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 9 del roadmap: Horarios — horario del negocio,
-horario por profesional (motor de disponibilidad sobre
-`ProfessionalSchedule`, ya modelado en la Etapa 7), excepciones, feriados
-argentinos con override manual por negocio (según el detalle de más
-arriba).
+Continuar con la Etapa 10 del roadmap: Agenda y Turnos — vistas día/
+semana/mes/lista, motor de disponibilidad real (generación de slots según
+`GET /schedule/availability` + duración del servicio, sin superposición
+con turnos ya tomados), estados del turno, lista de espera, señas
+(dependiente de Mercado Pago para clientes — Etapa 15), control de
+no-shows (según el detalle de más arriba).

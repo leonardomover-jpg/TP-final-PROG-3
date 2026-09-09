@@ -8,16 +8,20 @@ import { Prisma, PrismaClient } from '@prisma/client';
  * automáticamente acotado al tenant resuelto desde el JWT de la sesión.
  *
  * Reglas por modelo (documentadas porque no son todas iguales):
- * - User / Branch / Client / Professional / Service / Subscription /
- *   TenantFeatureFlag / AuditLog / SupportTicket: igualdad estricta de
- *   tenantId en todas las operaciones. Un tenant nunca ve ni escribe filas
- *   de otro tenant, punto.
- * - ClientNote / ProfessionalSchedule / ServiceProfessional: no tienen
- *   tenantId propio (cuelgan de Client.tenantId / Professional.tenantId /
- *   Service+Professional.tenantId), así que no se interceptan acá — el
- *   service correspondiente valida la pertenencia del padre (o de AMBOS
- *   padres, en el caso de ServiceProfessional) antes de leer/crear (mismo
- *   motivo que Role con findUnique, doc `10-CLIENTES.md` §4).
+ * - User / Branch / Client / Professional / Service / ScheduleException /
+ *   Subscription / TenantFeatureFlag / AuditLog / SupportTicket: igualdad
+ *   estricta de tenantId en todas las operaciones. Un tenant nunca ve ni
+ *   escribe filas de otro tenant, punto.
+ * - TenantHolidayOverride: mismo criterio que TenantFeatureFlag (clave
+ *   compuesta [tenantId, holidayId]) — solo findMany/upsert intervenidos,
+ *   ver ese bloque para el motivo.
+ * - ClientNote / ProfessionalSchedule / ServiceProfessional /
+ *   BranchSchedule: no tienen tenantId propio (cuelgan de Client.tenantId /
+ *   Professional.tenantId / Service+Professional.tenantId /
+ *   Branch.tenantId), así que no se interceptan acá — el service
+ *   correspondiente valida la pertenencia del padre (o de AMBOS padres, en
+ *   el caso de ServiceProfessional) antes de leer/crear (mismo motivo que
+ *   Role con findUnique, doc `10-CLIENTES.md` §4).
  * - Role: puede ser un rol de sistema (tenantId null, compartido y de solo
  *   lectura entre tenants) o un rol propio del tenant. Las lecturas
  *   (findMany/findFirst/count) devuelven "propios del tenant" OR "de
@@ -195,6 +199,39 @@ export function tenantScopeExtension(tenantId: string) {
           },
           async create({ args, query }) {
             args.data = { ...args.data, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
+        },
+        scheduleException: {
+          async findMany({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findFirst({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findUnique({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async delete({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async create({ args, query }) {
+            args.data = { ...args.data, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
+        },
+        tenantHolidayOverride: {
+          async findMany({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async upsert({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            args.create = { ...args.create, tenantId } as any; // ver "Nota de tipado" arriba
             return query(args);
           },
         },

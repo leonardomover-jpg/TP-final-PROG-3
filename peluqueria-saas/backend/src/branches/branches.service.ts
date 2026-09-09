@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
+import { SetScheduleDto } from '../common/dto/set-schedule.dto';
 
 @Injectable()
 export class BranchesService {
@@ -15,7 +16,10 @@ export class BranchesService {
   }
 
   async findOne(id: string) {
-    const branch = await this.tenantPrisma.client.branch.findUnique({ where: { id } });
+    const branch = await this.tenantPrisma.client.branch.findUnique({
+      where: { id },
+      include: { schedules: { orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }] } },
+    });
     if (!branch || branch.deletedAt) {
       throw new NotFoundException('Sucursal no encontrada.');
     }
@@ -50,6 +54,31 @@ export class BranchesService {
     return this.tenantPrisma.client.branch.update({
       where: { id },
       data: { deletedAt: new Date(), status: 'inactive' },
+    });
+  }
+
+  // Reemplaza el horario semanal completo de la sucursal — mismo patrón que
+  // ProfessionalSchedule (Etapa 7, doc `11` §3): deleteMany + createMany en
+  // una transacción, sin validar superposición de rangos todavía (eso es
+  // del motor de disponibilidad real, Etapa 10).
+  async setSchedule(branchId: string, dto: SetScheduleDto) {
+    await this.findOne(branchId);
+
+    await this.tenantPrisma.client.$transaction([
+      this.tenantPrisma.client.branchSchedule.deleteMany({ where: { branchId } }),
+      this.tenantPrisma.client.branchSchedule.createMany({
+        data: dto.entries.map((entry) => ({
+          branchId,
+          dayOfWeek: entry.dayOfWeek,
+          startTime: entry.startTime,
+          endTime: entry.endTime,
+        })),
+      }),
+    ]);
+
+    return this.tenantPrisma.client.branchSchedule.findMany({
+      where: { branchId },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
     });
   }
 }

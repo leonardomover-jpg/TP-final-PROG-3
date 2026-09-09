@@ -46,6 +46,13 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
   },
   { key: 'servicios.eliminar', module: 'servicios', description: 'Eliminar servicios' },
 
+  { key: 'horarios.ver', module: 'horarios', description: 'Ver horarios, excepciones, feriados y disponibilidad' },
+  {
+    key: 'horarios.gestionar',
+    module: 'horarios',
+    description: 'Cargar excepciones puntuales y decidir si el negocio abre en un feriado',
+  },
+
   { key: 'turnos.ver', module: 'turnos', description: 'Ver turnos' },
   { key: 'turnos.crear', module: 'turnos', description: 'Crear turnos' },
   { key: 'turnos.editar', module: 'turnos', description: 'Editar turnos' },
@@ -100,6 +107,30 @@ const FEATURE_FLAGS: { key: string; name: string; description: string }[] = [
   { key: 'advanced_reports', name: 'Reportes avanzados', description: 'Reportes y estadísticas avanzadas' },
 ];
 
+// Catálogo inicial de feriados nacionales argentinos — SOLO los
+// "inamovibles" (fecha fija todos los años) para 2026, más Viernes Santo
+// (depende del calendario litúrgico, calculado para 2026). Los feriados
+// "trasladables" (Paso a la Inmortalidad del Gral. San Martín, Día del
+// Respeto a la Diversidad Cultural, Día de la Soberanía Nacional) se
+// fijan por decreto del Poder Ejecutivo cada año y pueden no coincidir con
+// la fecha "de origen" — no se inventan acá sin confirmar el decreto
+// vigente (mismo principio del punto 94 del pedido aplicado en la Etapa 5
+// para Mercado Pago: no asumir un dato verificable sin verificarlo).
+// SUPER ADMIN los carga desde `platform-admin/holidays` una vez
+// confirmados — doc `13-HORARIOS.md` §3.
+const HOLIDAYS_2026: { date: string; name: string; year: number }[] = [
+  { date: '2026-01-01', name: 'Año Nuevo', year: 2026 },
+  { date: '2026-03-24', name: 'Día Nacional de la Memoria por la Verdad y la Justicia', year: 2026 },
+  { date: '2026-04-02', name: 'Día del Veterano y de los Caídos en la Guerra de Malvinas', year: 2026 },
+  { date: '2026-04-03', name: 'Viernes Santo', year: 2026 },
+  { date: '2026-05-01', name: 'Día del Trabajador', year: 2026 },
+  { date: '2026-05-25', name: 'Día de la Revolución de Mayo', year: 2026 },
+  { date: '2026-06-20', name: 'Paso a la Inmortalidad del General Manuel Belgrano', year: 2026 },
+  { date: '2026-07-09', name: 'Día de la Independencia', year: 2026 },
+  { date: '2026-12-08', name: 'Inmaculada Concepción de María', year: 2026 },
+  { date: '2026-12-25', name: 'Navidad', year: 2026 },
+];
+
 // Dos planes de ejemplo para poder probar la jerarquía de principio a fin
 // apenas se instala la plataforma. Nombres, precios y límites son
 // editables desde SUPER ADMIN en cualquier momento (punto 84 del pedido) —
@@ -150,6 +181,7 @@ const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
       'clientes.editar',
       'profesionales.ver',
       'servicios.ver',
+      'horarios.ver',
       'turnos.ver',
       'turnos.crear',
       'turnos.editar',
@@ -163,7 +195,14 @@ const SYSTEM_ROLES: { name: string; permissionKeys: string[] }[] = [
   },
   {
     name: 'Profesional',
-    permissionKeys: ['turnos.ver', 'turnos.editar', 'clientes.ver', 'profesionales.ver', 'servicios.ver'],
+    permissionKeys: [
+      'turnos.ver',
+      'turnos.editar',
+      'clientes.ver',
+      'profesionales.ver',
+      'servicios.ver',
+      'horarios.ver',
+    ],
   },
 ];
 
@@ -223,6 +262,14 @@ async function main() {
     });
   }
 
+  for (const holiday of HOLIDAYS_2026) {
+    await prisma.holiday.upsert({
+      where: { date: new Date(holiday.date) },
+      update: { name: holiday.name, year: holiday.year },
+      create: { date: new Date(holiday.date), name: holiday.name, year: holiday.year },
+    });
+  }
+
   // Bootstrap del primer SUPER ADMIN. No hay endpoint público de alta de
   // PlatformAdmin (sería un agujero de seguridad — punto 8 del pedido): la
   // única forma de crear el primero es este seed, leyendo credenciales de
@@ -248,7 +295,7 @@ async function main() {
 
   console.log(
     `Seed OK: ${allPermissions.length} permisos, ${SYSTEM_ROLES.length} roles de sistema, ` +
-      `${allFlags.length} feature flags, ${PLANS.length} planes.`,
+      `${allFlags.length} feature flags, ${PLANS.length} planes, ${HOLIDAYS_2026.length} feriados.`,
   );
 }
 

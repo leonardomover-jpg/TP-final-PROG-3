@@ -11,6 +11,7 @@ import { BranchesModule } from './branches/branches.module';
 import { ClientsModule } from './clients/clients.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
 import { ServicesModule } from './services/services.module';
+import { ScheduleModule } from './schedule/schedule.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -18,6 +19,7 @@ import { PlatformAdminSupportModule } from './platform-admin/support/platform-ad
 import { PlatformAdminCommunicationsModule } from './platform-admin/communications/platform-admin-communications.module';
 import { PlatformAdminPlansModule } from './platform-admin/plans/platform-admin-plans.module';
 import { PlatformAdminFeatureFlagsModule } from './platform-admin/feature-flags/platform-admin-feature-flags.module';
+import { PlatformAdminHolidaysModule } from './platform-admin/holidays/platform-admin-holidays.module';
 import { SupportModule } from './support/support.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { PlanLimitsModule } from './plan-limits/plan-limits.module';
@@ -44,6 +46,7 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     ClientsModule,
     ProfessionalsModule,
     ServicesModule,
+    ScheduleModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,
@@ -57,6 +60,7 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     PlatformAdminCommunicationsModule,
     PlatformAdminPlansModule,
     PlatformAdminFeatureFlagsModule,
+    PlatformAdminHolidaysModule,
     PlatformAdminSubscriptionsModule,
   ],
   providers: [

@@ -1,12 +1,13 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 8)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 9)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
 completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
 límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
 Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6),
-Profesionales (Etapa 7) y Servicios (Etapa 8). Ver `../docs/` para el
-diseño completo (arquitectura, base de datos, seguridad, roadmap).
+Profesionales (Etapa 7), Servicios (Etapa 8) y Horarios (Etapa 9). Ver
+`../docs/` para el diseño completo (arquitectura, base de datos,
+seguridad, roadmap).
 
 ## Requisitos
 
@@ -180,6 +181,30 @@ curl http://localhost:3000/api/v1/services/<serviceId> \
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Horarios
+
+```bash
+# 1) Cargar el horario semanal de la sucursal principal
+curl -X PUT http://localhost:3000/api/v1/branches/<branchId>/schedule \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"entries":[{"dayOfWeek":1,"startTime":"09:00","endTime":"18:00"}]}'
+
+# 2) Ver el catálogo de feriados (con el override de este negocio, si tiene)
+curl http://localhost:3000/api/v1/schedule/holidays \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 3) Decidir abrir igual un feriado puntual
+curl -X PATCH http://localhost:3000/api/v1/schedule/holidays/<holidayId>/override \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"isOpen":true}'
+
+# 4) Consultar disponibilidad combinada para un día concreto
+curl "http://localhost:3000/api/v1/schedule/availability?date=2026-03-04&branchId=<branchId>" \
+  -H "Authorization: Bearer <accessToken del negocio>"
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -216,6 +241,8 @@ src/
 ├── clients/                        # CRUD de clientes (CRM), notas internas, ficha (PlanLimitsGuard)
 ├── professionals/                   # CRUD de profesionales, horario semanal propio, vínculo a User
 ├── services/                         # CRUD de servicios, categoría, duración/precio, profesionales habilitados
+├── schedule/                          # excepciones, feriados (override por negocio), disponibilidad combinada
+├── common/dto/                         # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
 ├── plan-limits/                     # PlanLimitsService + PlanLimitsGuard (límites de plan)
@@ -231,6 +258,7 @@ src/
 │   ├── communications/                        # comunicaciones globales (todos/plan/negocios puntuales)
 │   ├── plans/                                  # CRUD de planes + asociación de feature flags
 │   ├── feature-flags/                           # catálogo global de feature flags
+│   ├── holidays/                                 # catálogo global de feriados argentinos
 │   └── subscriptions/                            # ver suscripciones/vencimientos de todos los negocios
 ├── common/filters/                                 # manejo de errores (nunca se expone detalle técnico)
 └── app.module.ts                                    # wiring de guards globales + throttler
@@ -254,6 +282,7 @@ test/
 ├── clients.spec.ts                                 # CRUD, notas internas, aislamiento, límite de plan
 ├── professionals.spec.ts                           # CRUD, horario, vínculo a User, aislamiento, límite de plan
 ├── services.spec.ts                                # CRUD, profesionales habilitados, aislamiento cross-tenant
+├── schedule.spec.ts                                # horario semanal, excepciones, feriados+override, disponibilidad
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 
