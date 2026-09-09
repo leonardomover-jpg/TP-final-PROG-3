@@ -86,6 +86,11 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
     description: 'Conectar/desconectar integraciones externas (Mercado Pago, etc.)',
   },
   { key: 'senas.gestionar', module: 'senas', description: 'Generar y ver señas de turnos' },
+  {
+    key: 'mensajes.gestionar',
+    module: 'mensajes',
+    description: 'Responder mensajes de Facebook/Instagram entrantes',
+  },
 
   { key: 'soporte.ver', module: 'soporte', description: 'Ver tickets de soporte del negocio' },
   { key: 'soporte.crear', module: 'soporte', description: 'Crear tickets de soporte' },

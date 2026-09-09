@@ -228,7 +228,23 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       el flag `whatsapp` (ya sembrado desde el arranque, sin uso hasta
       esta etapa). 147 tests en la suite completa (12 nuevos). Detalle en
       `docs/20-WHATSAPP.md`.
-- [ ] **Etapa 17 — Instagram / Facebook (Meta)**.
+- [x] **Etapa 17 — Instagram / Facebook (Meta)**: `TenantIntegration`
+      extendido con `provider: "facebook"`/`"instagram"` y
+      `externalAccountId` (Page ID / IG Business Account ID). Mismo
+      mecanismo de verificación de Meta que WhatsApp — extraído a
+      `src/common/crypto/meta-webhook-signature.ts` para no repetirlo.
+      `meta-client.ts`/`IntegrationsService` usan un solo par de
+      funciones/helpers parametrizadas por provider en vez de duplicar
+      Facebook e Instagram (comparten la misma Messenger Platform API).
+      Webhook por tenant (`MetaTenantWebhookService`, también
+      parametrizado) recibe mensajes entrantes de Messenger/Instagram
+      Direct y los traduce en una `Notification` (Etapa 14) para el
+      staff; responder es manual vía `POST /meta-messaging/reply` (nuevo
+      permiso `mensajes.gestionar`) — sin motor conversacional, mismo
+      criterio de restricción que WhatsApp. Gateado por los flags
+      `facebook`/`instagram` (ya sembrados desde el arranque). 161 tests
+      en la suite completa (14 nuevos). Detalle en
+      `docs/21-INSTAGRAM-FACEBOOK.md`.
 - [ ] **Etapa 18 — Página pública + QR + PWA**.
 - [ ] **Etapa 19 — Sucursales (multi-sucursal completo)**: permisos por
       sucursal, caja/inventario por sucursal.
@@ -247,4 +263,4 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 17 del roadmap: Instagram / Facebook (Meta).
+Continuar con la Etapa 18 del roadmap: Página pública + QR + PWA.

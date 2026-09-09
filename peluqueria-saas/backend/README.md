@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 16)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 17)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -10,10 +10,11 @@ y Turnos (Etapa 10), Productos e Inventario (Etapa 11), Ventas + Caja +
 Gastos + Comisiones (Etapa 12), Fidelización — Puntos/Gift Cards/
 Referidos/Promociones (Etapa 13), Notificaciones — centro + avisos
 internos de stock bajo y límite de plan (Etapa 14), Mercado Pago para
-clientes — integraciones por negocio + señas de turnos (Etapa 15) y
+clientes — integraciones por negocio + señas de turnos (Etapa 15),
 WhatsApp (Meta Cloud API) — confirmaciones/cancelaciones/recordatorios por
-negocio (Etapa 16). Ver `../docs/` para el diseño completo (arquitectura,
-base de datos, seguridad, roadmap).
+negocio (Etapa 16) e Instagram / Facebook (Meta) — mensajería por negocio
+(Etapa 17). Ver `../docs/` para el diseño completo (arquitectura, base de
+datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -404,6 +405,33 @@ curl -X POST http://localhost:3000/api/v1/appointments/<appointmentId>/send-remi
 #    URL y el verify_token del paso 1 en el dashboard de la app de Meta.
 ```
 
+## Flujo mínimo de prueba manual — Instagram / Facebook
+
+Requiere el plan Premium y habilitar `facebook`/`instagram` para el
+negocio — ver el flujo de Planes y Feature Flags más arriba.
+
+```bash
+# 1) Conectar la Página de Facebook DEL NEGOCIO (se valida contra
+#    GET /{pageId} antes de guardar)
+curl -X POST http://localhost:3000/api/v1/integrations/facebook/connect \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"accessToken":"EAA...","externalAccountId":"<Page ID>","appSecret":"<App Secret de Meta>","verifyToken":"<elegido por el negocio>"}'
+
+# 2) Responder un mensaje entrante (el recipientId sale de la notificación
+#    que generó el webhook)
+curl -X POST http://localhost:3000/api/v1/meta-messaging/reply \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"facebook","recipientId":"<psid del cliente>","message":"Hola! Te confirmamos tu turno."}'
+
+# 3) Los webhooks (GET para el handshake, POST para mensajes entrantes en
+#    /webhooks/facebook/tenant/:tenantId y /webhooks/instagram/tenant/:tenantId)
+#    los llama Meta — configurar esas URLs y el verify_token del paso 1
+#    en el dashboard de la app de Meta. Instagram sigue el mismo patrón
+#    con /integrations/instagram/connect.
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -454,12 +482,14 @@ src/
 ├── referrals/                                    # referidos entre clientes: registrar/completar
 ├── promotions/                                    # catálogo de promociones (CRUD, sin aplicación a Sale)
 ├── notifications/                                  # centro de notificaciones + avisos internos (stock bajo, límite de plan)
-├── integrations/                                    # TenantIntegration: conectar/desconectar Mercado Pago/WhatsApp por negocio
+├── integrations/                                    # TenantIntegration: conectar/desconectar Mercado Pago/WhatsApp/Facebook/Instagram por negocio
 ├── deposits/                                          # señas para turnos (checkout con la cuenta del negocio)
 ├── whatsapp/                                            # WhatsAppService (envío) + whatsapp-client.ts (Meta Cloud API)
+├── meta/                                                 # meta-client.ts — Graph API de Facebook Messenger/Instagram
+├── meta-messaging/                                        # responder mensajes entrantes de Facebook/Instagram (manual)
 ├── common/
 │   ├── dto/                            # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
-│   └── crypto/                          # cifrado AES-256-GCM de credenciales por tenant
+│   └── crypto/                          # cifrado AES-256-GCM de credenciales + verificación de webhooks de Meta
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
 ├── plan-limits/                     # PlanLimitsService + PlanLimitsGuard (límites de plan)
@@ -469,7 +499,8 @@ src/
 ├── webhooks/
 │   ├── mercado-pago/                     # notificaciones de pago de SUSCRIPCIÓN (cuenta de la plataforma)
 │   ├── mercado-pago-tenant/               # notificaciones de pago de SEÑAS (cuenta de cada negocio, por tenantId en la URL)
-│   └── whatsapp-tenant/                    # handshake + mensajes entrantes de WhatsApp (cuenta de cada negocio, por tenantId)
+│   ├── whatsapp-tenant/                    # handshake + mensajes entrantes de WhatsApp (cuenta de cada negocio, por tenantId)
+│   └── meta-tenant/                         # handshake + mensajes entrantes de Facebook/Instagram (por tenantId)
 ├── platform-admin/                       # todo lo de SUPER ADMIN — dominio de auth separado
 │   ├── auth/                              # login+MFA en 2 pasos, JWT/estrategia propios
 │   ├── tenants/                            # alta/búsqueda/suspender/reactivar/cancelar/asignar plan

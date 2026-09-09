@@ -1,5 +1,7 @@
 import { InternalServerErrorException } from '@nestjs/common';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { verifyHandshake, verifyWebhookSignature } from '../common/crypto/meta-webhook-signature';
+
+export { verifyHandshake, verifyWebhookSignature };
 
 export interface WhatsAppCredentials {
   baseUrl: string;
@@ -63,44 +65,4 @@ export async function validateCredentials(baseUrl: string, phoneNumberId: string
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   return response.ok;
-}
-
-// Handshake de suscripción del webhook (GET, lo hace Meta una sola vez al
-// configurar la URL en el dashboard): compara el hub.verify_token que
-// manda Meta contra el que el negocio eligió al conectar.
-export function verifyHandshake(storedVerifyToken: string, hubVerifyToken: string | undefined): boolean {
-  if (!hubVerifyToken) {
-    return false;
-  }
-  const expected = Buffer.from(storedVerifyToken);
-  const received = Buffer.from(hubVerifyToken);
-  if (expected.length !== received.length) {
-    return false;
-  }
-  return timingSafeEqual(expected, received);
-}
-
-// Firma X-Hub-Signature-256 de cada notificación entrante (formato
-// "sha256=<hex>"), HMAC-SHA256 sobre el BODY CRUDO (no el JSON ya
-// parseado — un solo espacio de diferencia ya rompe la firma) con el App
-// Secret de la app de Meta. Comparación en tiempo constante.
-export function verifyWebhookSignature(appSecret: string, rawBody: Buffer, signatureHeader: string | undefined): boolean {
-  if (!signatureHeader || !signatureHeader.startsWith('sha256=')) {
-    return false;
-  }
-  const receivedHex = signatureHeader.slice('sha256='.length);
-  const expectedHex = createHmac('sha256', appSecret).update(rawBody).digest('hex');
-
-  let expectedBuffer: Buffer;
-  let receivedBuffer: Buffer;
-  try {
-    expectedBuffer = Buffer.from(expectedHex, 'hex');
-    receivedBuffer = Buffer.from(receivedHex, 'hex');
-  } catch {
-    return false;
-  }
-  if (expectedBuffer.length !== receivedBuffer.length) {
-    return false;
-  }
-  return timingSafeEqual(expectedBuffer, receivedBuffer);
 }

@@ -29,6 +29,8 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { DepositsModule } from './deposits/deposits.module';
 import { MercadoPagoTenantWebhookModule } from './webhooks/mercado-pago-tenant/mercado-pago-tenant-webhook.module';
 import { WhatsAppTenantWebhookModule } from './webhooks/whatsapp-tenant/whatsapp-tenant-webhook.module';
+import { MetaMessagingModule } from './meta-messaging/meta-messaging.module';
+import { MetaTenantWebhookModule } from './webhooks/meta-tenant/meta-tenant-webhook.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -81,6 +83,8 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     DepositsModule,
     MercadoPagoTenantWebhookModule,
     WhatsAppTenantWebhookModule,
+    MetaMessagingModule,
+    MetaTenantWebhookModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,

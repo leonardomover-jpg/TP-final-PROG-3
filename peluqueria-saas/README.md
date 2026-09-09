@@ -87,8 +87,14 @@ repositorio — no comparten código, base de datos ni dependencias.
   scheduler todavía), webhook por tenant recibe mensajes entrantes y avisa
   al staff por su centro de notificaciones. El flujo de reserva por chat
   queda deliberadamente diferido — ver `docs/20-WHATSAPP.md` §8.
+- ✅ **Etapa 17 — Instagram / Facebook (Meta)**: cada negocio conecta su
+  Página de Facebook y/o su cuenta de Instagram Business (mismo cifrado
+  que Mercado Pago/WhatsApp). Webhook por tenant recibe mensajes de
+  Messenger/Instagram Direct y avisa al staff por su centro de
+  notificaciones; responder es manual (sin motor conversacional, mismo
+  criterio que WhatsApp).
 
-147 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+161 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -296,6 +302,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/18-NOTIFICACIONES.md`](docs/18-NOTIFICACIONES.md) | Etapa 14: Notification/CommunicationRead, centro de notificaciones + consumo de Comunicaciones + avisos de stock bajo y límite de plan |
 | [`docs/19-MERCADO-PAGO-CLIENTES.md`](docs/19-MERCADO-PAGO-CLIENTES.md) | Etapa 15: TenantIntegration/Deposit, Mercado Pago por negocio (credenciales cifradas) para señas de turnos |
 | [`docs/20-WHATSAPP.md`](docs/20-WHATSAPP.md) | Etapa 16: WhatsApp Business por negocio, confirmaciones/cancelaciones/recordatorios, webhook por tenant |
+| [`docs/21-INSTAGRAM-FACEBOOK.md`](docs/21-INSTAGRAM-FACEBOOK.md) | Etapa 17: Facebook Messenger / Instagram Direct por negocio, mensajes entrantes + respuesta manual, webhook por tenant |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -311,5 +318,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 17 del roadmap: Instagram / Facebook (Meta), según
-el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 18 del roadmap: Página pública + QR + PWA, según el
+detalle de `docs/06-ROADMAP-ETAPAS.md`.
