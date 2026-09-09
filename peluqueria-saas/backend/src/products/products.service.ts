@@ -5,10 +5,14 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { StockAdjustmentDto } from './dto/stock-adjustment.dto';
 import { ListProductsQueryDto } from './dto/list-products.query.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly tenantPrisma: TenantPrismaService) {}
+  constructor(
+    private readonly tenantPrisma: TenantPrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async findAll(query: ListProductsQueryDto) {
     const products = await this.tenantPrisma.client.product.findMany({
@@ -105,6 +109,21 @@ export class ProductsService {
         `El ajuste dejaría el stock en ${newStock}: no puede quedar negativo (stock actual: ${product.stock}).`,
       );
     }
-    return this.tenantPrisma.client.product.update({ where: { id }, data: { stock: newStock } });
+    const updated = await this.tenantPrisma.client.product.update({ where: { id }, data: { stock: newStock } });
+
+    // Aviso solo en el CRUCE hacia stock bajo (Etapa 14) — si ya estaba
+    // bajo antes de este ajuste, no se repite en cada ajuste posterior.
+    if (newStock <= product.minStock && product.stock > product.minStock) {
+      await this.notificationsService.notifyUsersWithPermission(
+        this.tenantPrisma.tenantId,
+        'inventario.gestionar',
+        'low_stock',
+        `Stock bajo: ${product.name}`,
+        `El stock de "${product.name}" bajó a ${newStock} unidades (mínimo: ${product.minStock}).`,
+        { productId: id },
+      );
+    }
+
+    return updated;
   }
 }

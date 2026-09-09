@@ -24,6 +24,7 @@ import { PointsModule } from './points/points.module';
 import { GiftCardsModule } from './gift-cards/gift-cards.module';
 import { ReferralsModule } from './referrals/referrals.module';
 import { PromotionsModule } from './promotions/promotions.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -71,6 +72,7 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     GiftCardsModule,
     ReferralsModule,
     PromotionsModule,
+    NotificationsModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,

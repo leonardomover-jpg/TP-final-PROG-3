@@ -67,8 +67,14 @@ repositorio — no comparten código, base de datos ni dependencias.
   referente al completar el referido), Promociones (catálogo con código
   único). Sin ningún hook automático desde Ventas todavía — ver
   `docs/17-FIDELIZACION.md` §6.
+- ✅ **Etapa 14 — Notificaciones**: centro de notificaciones (buzón propio
+  de cada usuario + consumo de las Comunicaciones globales de la Etapa 3,
+  resueltas por audiencia en runtime) y dos avisos internos automáticos —
+  stock bajo (al cruzar el mínimo, desde Productos y Ventas) y cercanía al
+  límite del plan (75%/90%, sin duplicar avisos). Canales externos
+  (WhatsApp, email) quedan para etapas futuras.
 
-119 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+127 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -273,6 +279,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/15-PRODUCTOS-INVENTARIO.md`](docs/15-PRODUCTOS-INVENTARIO.md) | Etapa 11: Product/Supplier/Purchase, primer módulo gateado por Feature Flags, stock, compras |
 | [`docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md`](docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md) | Etapa 12: Sale/CashRegister/Expense, ventas mixtas, pagos combinados, arqueo de caja, comisiones |
 | [`docs/17-FIDELIZACION.md`](docs/17-FIDELIZACION.md) | Etapa 13: LoyaltyPointsTransaction/GiftCard/Referral/Promotion, cuatro módulos independientes gateados por Feature Flags |
+| [`docs/18-NOTIFICACIONES.md`](docs/18-NOTIFICACIONES.md) | Etapa 14: Notification/CommunicationRead, centro de notificaciones + consumo de Comunicaciones + avisos de stock bajo y límite de plan |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -288,5 +295,6 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 14 del roadmap: Notificaciones (centro + canales
-internos), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 15 del roadmap: Mercado Pago para clientes (señas,
+pago de servicios/productos, checkout, webhooks, conciliación con Ventas/
+Turnos), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

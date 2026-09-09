@@ -74,6 +74,7 @@ model Tenant {
   giftCards                 GiftCard[]
   referrals                 Referral[]
   promotions                Promotion[]
+  notifications             Notification[]
 
   @@index([status])
 }
@@ -151,10 +152,12 @@ model User {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  branches      UserBranch[]
-  roles         UserRole[]
-  refreshTokens RefreshToken[]
-  professional  Professional?
+  branches           UserBranch[]
+  roles              UserRole[]
+  refreshTokens      RefreshToken[]
+  professional       Professional?
+  notifications      Notification[]
+  communicationReads CommunicationRead[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -1025,6 +1028,7 @@ model Communication {
   createdAt        DateTime @default(now())
 
   tenants CommunicationTenant[]
+  reads   CommunicationRead[]
 }
 
 // Solo se usa cuando audienceType = "tenants" (negocios puntuales elegidos
@@ -1037,4 +1041,47 @@ model CommunicationTenant {
   tenant          Tenant        @relation(fields: [tenantId], references: [id])
 
   @@id([communicationId, tenantId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// NOTIFICACIONES (Etapa 14) — Centro de notificaciones + canales internos
+// ─────────────────────────────────────────────────────────────────────────
+// `Notification` es el "buzón" propio de cada User, generado por el
+// backend ante eventos internos (stock bajo, uso del plan cerca del
+// límite) — nunca por el cliente vía API. `CommunicationRead` es solo el
+// marcador de lectura de una Comunicación global (Etapa 3) por parte de
+// un User puntual: la Comunicación en sí no se duplica por usuario, se
+// resuelve en runtime (mismo criterio que la jerarquía de Feature Flags)
+// y se cruza con esta tabla para saber si ESTE usuario ya la vio. Ver
+// doc `18-NOTIFICACIONES.md` para el detalle de qué eventos disparan qué.
+
+model Notification {
+  id        String    @id @default(cuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  type      String // low_stock | plan_limit_warning
+  title     String
+  body      String
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// Sin tenantId propio a propósito (doc `18` §5): userId ya identifica de
+// forma inequívoca a un User concreto de un tenant concreto, y el único
+// lugar que escribe acá es NotificationsService, siempre con el userId
+// del usuario autenticado — no hay ningún ID de otro tenant que "adivinar".
+model CommunicationRead {
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  communicationId String
+  communication   Communication @relation(fields: [communicationId], references: [id])
+  readAt          DateTime      @default(now())
+
+  @@id([userId, communicationId])
 }

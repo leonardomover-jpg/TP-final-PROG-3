@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 13)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 14)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -7,9 +7,10 @@ límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
 Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6),
 Profesionales (Etapa 7), Servicios (Etapa 8), Horarios (Etapa 9), Agenda
 y Turnos (Etapa 10), Productos e Inventario (Etapa 11), Ventas + Caja +
-Gastos + Comisiones (Etapa 12) y Fidelización — Puntos/Gift Cards/
-Referidos/Promociones (Etapa 13). Ver `../docs/` para el diseño completo
-(arquitectura, base de datos, seguridad, roadmap).
+Gastos + Comisiones (Etapa 12), Fidelización — Puntos/Gift Cards/
+Referidos/Promociones (Etapa 13) y Notificaciones — centro + avisos
+internos de stock bajo y límite de plan (Etapa 14). Ver `../docs/` para el
+diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -320,6 +321,35 @@ curl -X POST http://localhost:3000/api/v1/promotions \
   -d '{"name":"Verano 2026","code":"VERANO26","discountType":"percentage","discountValue":15}'
 ```
 
+## Flujo mínimo de prueba manual — Notificaciones
+
+```bash
+# 1) Ver el centro de notificaciones (buzón propio + comunicaciones aplicables)
+curl http://localhost:3000/api/v1/notifications \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 2) Contador de no leídas
+curl http://localhost:3000/api/v1/notifications/unread-count \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 3) Marcar una notificación propia (de sistema) como leída
+curl -X PATCH http://localhost:3000/api/v1/notifications/<notificationId>/read \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 4) Marcar una comunicación global como leída
+curl -X PATCH http://localhost:3000/api/v1/notifications/communications/<communicationId>/read \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 5) Marcar todo como leído
+curl -X PATCH http://localhost:3000/api/v1/notifications/read-all \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# Los avisos de stock bajo (POST /products/:id/stock-adjustment cruzando el
+# mínimo, o una venta que lo cruce) y de límite de plan (75%/90% al crear
+# un usuario/sucursal/cliente/profesional) se generan solos — no hay
+# endpoint para dispararlos a mano.
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -369,6 +399,7 @@ src/
 ├── gift-cards/                                  # gift cards: emitir, canjear, cancelar
 ├── referrals/                                    # referidos entre clientes: registrar/completar
 ├── promotions/                                    # catálogo de promociones (CRUD, sin aplicación a Sale)
+├── notifications/                                  # centro de notificaciones + avisos internos (stock bajo, límite de plan)
 ├── common/dto/                         # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio

@@ -176,7 +176,21 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       explícito. Permisos nuevos `puntos.gestionar`/`giftcards.gestionar`/
       `referidos.gestionar`/`promociones.gestionar`. 119 tests en la
       suite completa (14 nuevos). Detalle en `docs/17-FIDELIZACION.md`.
-- [ ] **Etapa 14 — Notificaciones (centro + canales internos)**.
+- [x] **Etapa 14 — Notificaciones (centro + canales internos)**:
+      `Notification` (buzón propio de cada `User`) + `CommunicationRead`
+      (marca de lectura, sin duplicar la Comunicación por usuario —
+      resuelta en runtime igual que Feature Flags). `GET /notifications`
+      combina notificaciones propias + Comunicaciones globales (Etapa 3)
+      aplicables por audiencia. Dos disparadores internos: stock bajo
+      (cruce hacia `stock <= minStock`, desde `ProductsService.adjustStock`
+      y `SalesService.create`, solo a usuarios con `inventario.gestionar`)
+      y aviso de límite de plan al cruzar 75%/90% (desde
+      `PlanLimitsService.assertCanCreate`, sin persistir "ya avisé" —
+      se deduce de la aritmética del conteo, solo a `suscripcion.gestionar`).
+      `NotificationsService` es un singleton sin `TenantPrismaService` a
+      propósito (evita forzar a `PlanLimitsGuard` a volverse
+      request-scoped). 127 tests en la suite completa (8 nuevos). Detalle
+      en `docs/18-NOTIFICACIONES.md`.
 - [ ] **Etapa 15 — Mercado Pago para clientes**: señas, pago de servicios/
       productos, checkout, webhooks, conciliación con Ventas/Turnos.
 - [ ] **Etapa 16 — WhatsApp (Meta Cloud API)**: conexión de cuenta,
@@ -200,5 +214,6 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 14 del roadmap: Notificaciones (centro + canales
-internos).
+Continuar con la Etapa 15 del roadmap: Mercado Pago para clientes (señas,
+pago de servicios/productos, checkout, webhooks, conciliación con Ventas/
+Turnos).

@@ -19,6 +19,20 @@ import { Prisma, PrismaClient } from '@prisma/client';
  *   GiftCard.tenantId), no se interceptan acá — el service correspondiente
  *   valida la pertenencia del padre (y de cada Product/Service referenciado)
  *   antes de escribir.
+ * - Notification: SÍ tiene tenantId propio, pero deliberadamente NO pasa
+ *   por acá (doc `18-NOTIFICACIONES.md` §5) — NotificationsService es un
+ *   singleton sin estado (mismo molde que FeatureFlagsService/
+ *   PlanLimitsService/PlanInfoService), porque lo inyectan tanto services
+ *   request-scoped (Products, Sales) como uno que NO lo es
+ *   (PlanLimitsService, usado desde un Guard); necesita quedar
+ *   inyectable en cualquiera de los dos sin arrastrar el bug de scope
+ *   documentado en Etapas 2/5/10. Cada query de NotificationsService
+ *   agrega `tenantId` a mano, igual que ya hacen esos otros services.
+ * - CommunicationRead: no tiene tenantId propio — cuelga de un `userId`
+ *   que NotificationsService siempre resuelve del usuario autenticado
+ *   (nunca de un id que mande el cliente), así que no hay ningún tenant
+ *   ajeno que "adivinar". Communication (la comunicación en sí) es una
+ *   entidad de plataforma, fuera de cualquier tenant — no se toca acá.
  * - TenantHolidayOverride: mismo criterio que TenantFeatureFlag (clave
  *   compuesta [tenantId, holidayId]) — solo findMany/upsert intervenidos,
  *   ver ese bloque para el motivo.

@@ -4,6 +4,7 @@ import { CreateSaleDto } from './dto/create-sale.dto';
 import { CancelSaleDto } from './dto/cancel-sale.dto';
 import { ListSalesQueryDto } from './dto/list-sales.query.dto';
 import { CommissionsQueryDto } from './dto/commissions.query.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const SALE_INCLUDE = {
   branch: { select: { id: true, name: true } },
@@ -27,7 +28,10 @@ const AMOUNT_EPSILON = 0.01;
  */
 @Injectable()
 export class SalesService {
-  constructor(private readonly tenantPrisma: TenantPrismaService) {}
+  constructor(
+    private readonly tenantPrisma: TenantPrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   findAll(query: ListSalesQueryDto) {
     return this.tenantPrisma.client.sale.findMany({
@@ -92,6 +96,10 @@ export class SalesService {
       unitPrice: number;
       subtotal: number;
     }[] = [];
+    // Foto del stock/minStock de cada producto ANTES de descontar — se usa
+    // después de la transacción para detectar el cruce hacia stock bajo
+    // (Etapa 14), sin repetir la consulta.
+    const productSnapshots = new Map<string, { name: string; stock: number; minStock: number }>();
     for (const item of dto.items) {
       if (item.itemType === 'service') {
         if (!item.serviceId || item.productId) {
@@ -132,6 +140,7 @@ export class SalesService {
           unitPrice,
           subtotal: unitPrice * item.quantity,
         });
+        productSnapshots.set(product.id, { name: product.name, stock: product.stock, minStock: product.minStock });
       }
     }
 
@@ -174,6 +183,25 @@ export class SalesService {
 
       return created;
     });
+
+    // Recién después de confirmada la transacción (nunca si algo la hizo
+    // fallar) — mismo cruce que ProductsService.adjustStock, sobre la foto
+    // de stock tomada antes de descontar.
+    for (const [productId, quantity] of stockDeltas) {
+      const snapshot = productSnapshots.get(productId);
+      if (!snapshot) continue;
+      const newStock = snapshot.stock - quantity;
+      if (newStock <= snapshot.minStock && snapshot.stock > snapshot.minStock) {
+        await this.notificationsService.notifyUsersWithPermission(
+          this.tenantPrisma.tenantId,
+          'inventario.gestionar',
+          'low_stock',
+          `Stock bajo: ${snapshot.name}`,
+          `El stock de "${snapshot.name}" bajó a ${newStock} unidades (mínimo: ${snapshot.minStock}).`,
+          { productId },
+        );
+      }
+    }
 
     return sale;
   }
