@@ -1,14 +1,14 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 10)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 11)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
 completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
 límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
 Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6),
-Profesionales (Etapa 7), Servicios (Etapa 8), Horarios (Etapa 9) y Agenda
-y Turnos — el motor de disponibilidad real (Etapa 10). Ver `../docs/`
-para el diseño completo (arquitectura, base de datos, seguridad,
-roadmap).
+Profesionales (Etapa 7), Servicios (Etapa 8), Horarios (Etapa 9), Agenda
+y Turnos (Etapa 10) y Productos e Inventario — primer módulo opcional
+gateado de verdad por Feature Flags (Etapa 11). Ver `../docs/` para el
+diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -227,6 +227,32 @@ curl "http://localhost:3000/api/v1/appointments?from=2026-03-02T00:00:00.000Z&to
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Productos e Inventario
+
+```bash
+# 0) Requiere el feature flag "inventory" habilitado (plan Premium +
+#    PATCH /feature-flags/inventory {"enabled":true}) — sin eso, 403.
+
+# 1) Crear un producto
+curl -X POST http://localhost:3000/api/v1/products \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Shampoo 500ml","sku":"SH-500","price":4500,"stock":10,"minStock":3}'
+
+# 2) Ver productos por debajo del stock mínimo
+curl "http://localhost:3000/api/v1/products?lowStock=true" \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 3) Compra a un proveedor: crear (no toca stock) -> recibir (sí lo toca)
+curl -X POST http://localhost:3000/api/v1/purchases \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"supplierId":"<supplierId>","items":[{"productId":"<productId>","quantity":20,"unitCost":1200}]}'
+
+curl -X POST http://localhost:3000/api/v1/purchases/<purchaseId>/receive \
+  -H "Authorization: Bearer <accessToken del negocio>"
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -266,6 +292,9 @@ src/
 ├── schedule/                          # excepciones, feriados (override por negocio), disponibilidad combinada
 ├── appointments/                       # turnos: motor de disponibilidad, estados, listado por rango
 ├── waitlist/                            # lista de espera (reusa permisos turnos.*)
+├── products/                             # catálogo de productos, stock, ajustes, alerta de stock mínimo
+├── suppliers/                             # proveedores
+├── purchases/                              # compras con ítems (pending -> received incrementa stock)
 ├── common/dto/                         # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
@@ -308,6 +337,7 @@ test/
 ├── services.spec.ts                                # CRUD, profesionales habilitados, aislamiento cross-tenant
 ├── schedule.spec.ts                                # horario semanal, excepciones, feriados+override, disponibilidad
 ├── appointments.spec.ts                            # motor de disponibilidad, transiciones, lista de espera
+├── products.spec.ts                                # gate de feature flag, stock, compras, aislamiento
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

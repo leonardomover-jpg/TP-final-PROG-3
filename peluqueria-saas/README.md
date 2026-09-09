@@ -51,8 +51,12 @@ repositorio — no comparten código, base de datos ni dependencias.
   superpone con otro turno activo. Estados del turno con transiciones
   validadas, lista de espera. Señas quedan para la Etapa 15 (Mercado Pago
   para clientes).
+- ✅ **Etapa 11 — Productos e Inventario**: primer módulo opcional gateado
+  de verdad por Feature Flags (`inventory`) — sin habilitarlo, 403 en todo
+  el módulo. Productos con SKU único, ajuste de stock, alerta de stock
+  mínimo, proveedores, y compras que solo tocan stock al recibirlas.
 
-85 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+95 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -200,9 +204,23 @@ Implementado en Etapa 10 (detalle completo en
 - Lista de espera (`/waitlist`) para cuando no hay disponibilidad en la
   fecha que el cliente prefiere.
 
+Implementado en Etapa 11 (detalle completo en
+[`docs/15-PRODUCTOS-INVENTARIO.md`](docs/15-PRODUCTOS-INVENTARIO.md)):
+
+- Primer módulo realmente **opcional**: `Products`/`Suppliers`/`Purchases`
+  llevan `@RequiresFeature('inventory')` — sin ese feature flag habilitado
+  para el negocio (jerarquía SUPER ADMIN → Plan → Negocio de la Etapa 4),
+  los tres controllers enteros responden 403.
+- Productos con SKU único por negocio, ajuste manual de stock (con
+  motivo, nunca deja el stock negativo), y alerta de stock mínimo
+  (`GET /products?lowStock=true`).
+- Compras a un proveedor: `pending` no toca stock; `receive` incrementa el
+  stock de cada ítem y actualiza el costo del producto, en una
+  transacción.
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
-El resto de los módulos de negocio (inventario, ventas, etc.) se
+El resto de los módulos de negocio (ventas, caja, fidelización, etc.) se
 implementan en las etapas siguientes, en el orden definido en
 [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
 
@@ -224,6 +242,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/12-SERVICIOS.md`](docs/12-SERVICIOS.md) | Etapa 8: modelo Service/ServiceProfessional, CRUD, categoría, duración/precio, profesionales habilitados |
 | [`docs/13-HORARIOS.md`](docs/13-HORARIOS.md) | Etapa 9: BranchSchedule, ScheduleException, catálogo de feriados con override, endpoint de disponibilidad combinada |
 | [`docs/14-AGENDA-TURNOS.md`](docs/14-AGENDA-TURNOS.md) | Etapa 10: Appointment/WaitlistEntry, motor de disponibilidad real, estados del turno, lista de espera |
+| [`docs/15-PRODUCTOS-INVENTARIO.md`](docs/15-PRODUCTOS-INVENTARIO.md) | Etapa 11: Product/Supplier/Purchase, primer módulo gateado por Feature Flags, stock, compras |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -239,6 +258,7 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 11 del roadmap: Productos e Inventario — alta de
-productos, stock, alertas de stock mínimo, proveedores, compras, según el
-detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 12 del roadmap: Ventas + Caja + Gastos +
+Comisiones — ventas mixtas (servicios+productos), pagos combinados,
+apertura/cierre de caja con arqueo, gastos categorizados, cálculo de
+comisiones, según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

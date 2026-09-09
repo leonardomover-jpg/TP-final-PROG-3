@@ -1,0 +1,110 @@
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { TenantPrismaService } from '../prisma/tenant-prisma.service';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { StockAdjustmentDto } from './dto/stock-adjustment.dto';
+import { ListProductsQueryDto } from './dto/list-products.query.dto';
+
+@Injectable()
+export class ProductsService {
+  constructor(private readonly tenantPrisma: TenantPrismaService) {}
+
+  async findAll(query: ListProductsQueryDto) {
+    const products = await this.tenantPrisma.client.product.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    // stock <= minStock no se puede expresar como filtro de Prisma (compara
+    // dos columnas entre sí) sin SQL crudo — con el volumen esperado de
+    // productos de un negocio, filtrar en memoria es más simple y no
+    // justifica esa fricción.
+    return query.lowStock === 'true' ? products.filter((p) => p.stock <= p.minStock) : products;
+  }
+
+  async findOne(id: string) {
+    const product = await this.tenantPrisma.client.product.findUnique({ where: { id } });
+    if (!product || product.deletedAt) {
+      throw new NotFoundException('Producto no encontrado.');
+    }
+    return product;
+  }
+
+  private async assertExists(id: string) {
+    const product = await this.findOne(id);
+    return product;
+  }
+
+  async create(dto: CreateProductDto) {
+    try {
+      return await this.tenantPrisma.client.product.create({
+        data: {
+          tenantId: this.tenantPrisma.tenantId,
+          name: dto.name,
+          sku: dto.sku,
+          description: dto.description,
+          category: dto.category,
+          price: dto.price,
+          unit: dto.unit ?? 'unidad',
+          stock: dto.stock ?? 0,
+          minStock: dto.minStock ?? 0,
+          status: dto.status ?? 'active',
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Ya existe un producto con ese SKU en este negocio.');
+      }
+      throw error;
+    }
+  }
+
+  async update(id: string, dto: UpdateProductDto) {
+    await this.assertExists(id);
+
+    const data: Prisma.ProductUpdateInput = {
+      ...(dto.name && { name: dto.name }),
+      ...(dto.sku !== undefined && { sku: dto.sku }),
+      ...(dto.description !== undefined && { description: dto.description }),
+      ...(dto.category !== undefined && { category: dto.category }),
+      ...(dto.price !== undefined && { price: dto.price }),
+      ...(dto.unit && { unit: dto.unit }),
+      ...(dto.minStock !== undefined && { minStock: dto.minStock }),
+      ...(dto.status && { status: dto.status }),
+    };
+
+    try {
+      return await this.tenantPrisma.client.product.update({ where: { id }, data });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Ya existe un producto con ese SKU en este negocio.');
+      }
+      throw error;
+    }
+  }
+
+  async remove(id: string) {
+    await this.assertExists(id);
+    return this.tenantPrisma.client.product.update({
+      where: { id },
+      data: { deletedAt: new Date(), status: 'inactive' },
+    });
+  }
+
+  // Ajuste manual de stock (mermas, roturas, conteo de inventario que
+  // encontró una diferencia) — no es una compra ni una venta, así que no
+  // pasa por Purchase. Sin ledger de movimientos en esta etapa (doc
+  // `15-PRODUCTOS-INVENTARIO.md` §6): el valor resultante queda en
+  // Product.stock, con el motivo solo en la respuesta de este endpoint,
+  // no persistido aparte.
+  async adjustStock(id: string, dto: StockAdjustmentDto) {
+    const product = await this.assertExists(id);
+    const newStock = product.stock + dto.delta;
+    if (newStock < 0) {
+      throw new BadRequestException(
+        `El ajuste dejaría el stock en ${newStock}: no puede quedar negativo (stock actual: ${product.stock}).`,
+      );
+    }
+    return this.tenantPrisma.client.product.update({ where: { id }, data: { stock: newStock } });
+  }
+}

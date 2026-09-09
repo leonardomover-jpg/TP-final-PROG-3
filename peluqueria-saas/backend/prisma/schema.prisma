@@ -64,6 +64,9 @@ model Tenant {
   holidayOverrides     TenantHolidayOverride[]
   appointments         Appointment[]
   waitlistEntries      WaitlistEntry[]
+  products             Product[]
+  suppliers            Supplier[]
+  purchases            Purchase[]
 
   @@index([status])
 }
@@ -600,6 +603,100 @@ model WaitlistEntry {
 
   @@index([tenantId])
   @@index([tenantId, status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PRODUCTOS E INVENTARIO (Etapa 11)
+// ─────────────────────────────────────────────────────────────────────────
+
+// Primer módulo opcional gateado de verdad por el FeatureFlagGuard/
+// @RequiresFeature construido en la Etapa 4 (doc `08` §3) — hasta ahora
+// esa infraestructura no tenía ningún consumidor real. `inventory` ya
+// estaba en el catálogo de feature flags sembrado desde la Etapa 2.
+model Product {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  name        String
+  sku         String?
+  description String?
+  category    String? // tag libre, mismo criterio que Service.category (doc `12` §3)
+  price       Decimal   @db.Decimal(12, 2) // precio de venta
+  cost        Decimal?  @db.Decimal(12, 2) // costo de la última compra recibida
+  unit        String    @default("unidad") // "unidad", "ml", "kg", etc.
+  stock       Int       @default(0)
+  minStock    Int       @default(0) // umbral para la alerta de stock bajo
+  status      String    @default("active") // active | inactive
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  purchaseItems PurchaseItem[]
+
+  // sku es opcional pero, cuando se carga, tiene que ser único dentro del
+  // tenant — Postgres no exige unicidad entre múltiples NULLs, así que
+  // varios productos sin sku conviven sin problema.
+  @@unique([tenantId, sku])
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+}
+
+model Supplier {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  notes       String?
+  status      String    @default("active") // active | inactive
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  purchases Purchase[]
+
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+}
+
+// Una compra a un proveedor. `pending` no afecta stock todavía — recién al
+// pasar a `received` (PurchasesService.receive, en una transacción) se
+// incrementa Product.stock de cada ítem y se actualiza Product.cost con el
+// último unitCost. Sin edición de ítems después de creada (el flujo es
+// crear con los ítems finales → recibir o cancelar) — si hace falta
+// corregir una compra ya recibida, se registra como ajuste de stock
+// manual (`POST /products/:id/stock-adjustment`), no reabriendo la compra.
+model Purchase {
+  id         String    @id @default(cuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  supplierId String
+  supplier   Supplier  @relation(fields: [supplierId], references: [id])
+  status     String    @default("pending") // pending | received | cancelled
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  receivedAt DateTime?
+
+  items PurchaseItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  unitCost   Decimal  @db.Decimal(12, 2)
+
+  @@index([purchaseId])
+  @@index([productId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────

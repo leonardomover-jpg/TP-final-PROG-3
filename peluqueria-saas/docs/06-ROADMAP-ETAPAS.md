@@ -133,8 +133,18 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       rango de fechas, sin endpoints separados. Señas quedan para la Etapa
       15 (dependen de Mercado Pago para clientes). 85 tests en la suite
       completa (9 nuevos). Detalle en `docs/14-AGENDA-TURNOS.md`.
-- [ ] **Etapa 11 — Productos e Inventario**: alta de productos, stock,
-      alertas de stock mínimo, proveedores, compras.
+- [x] **Etapa 11 — Productos e Inventario**: `Product`/`Supplier`/
+      `Purchase`/`PurchaseItem` tenant-scoped. Primer módulo opcional
+      gateado de verdad por `FeatureFlagGuard`/`@RequiresFeature('inventory')`
+      (Etapa 4 — infraestructura sin consumidor real hasta ahora): sin el
+      flag habilitado, 403 en todo el módulo, sin importar permisos. CRUD
+      de productos con SKU único por tenant, ajuste manual de stock,
+      alerta de stock mínimo (`?lowStock=true`), proveedores, y compras
+      (`pending` no toca stock, `receive` lo incrementa y actualiza el
+      costo en una transacción). Reusa los permisos
+      `productos.gestionar`/`inventario.gestionar` ya sembrados desde la
+      Etapa 2. 95 tests en la suite completa (10 nuevos). Detalle en
+      `docs/15-PRODUCTOS-INVENTARIO.md`.
 - [ ] **Etapa 12 — Ventas + Caja + Gastos + Comisiones**: ventas mixtas
       (servicios+productos), pagos combinados, apertura/cierre de caja con
       arqueo, gastos categorizados, cálculo de comisiones.
@@ -164,6 +174,8 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 11 del roadmap: Productos e Inventario — alta de
-productos, stock, alertas de stock mínimo, proveedores, compras (según el
-detalle de más arriba).
+Continuar con la Etapa 12 del roadmap: Ventas + Caja + Gastos + Comisiones
+— ventas mixtas (servicios+productos, descontando stock de `Product`),
+pagos combinados, apertura/cierre de caja con arqueo, gastos
+categorizados, cálculo de comisiones sobre `Professional.commissionPercentage`
+(según el detalle de más arriba).
