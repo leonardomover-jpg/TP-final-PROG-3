@@ -80,6 +80,13 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
   { key: 'referidos.gestionar', module: 'referidos', description: 'Registrar y completar referidos entre clientes' },
   { key: 'promociones.gestionar', module: 'promociones', description: 'Gestionar promociones y descuentos' },
 
+  {
+    key: 'integraciones.gestionar',
+    module: 'integraciones',
+    description: 'Conectar/desconectar integraciones externas (Mercado Pago, etc.)',
+  },
+  { key: 'senas.gestionar', module: 'senas', description: 'Generar y ver señas de turnos' },
+
   { key: 'soporte.ver', module: 'soporte', description: 'Ver tickets de soporte del negocio' },
   { key: 'soporte.crear', module: 'soporte', description: 'Crear tickets de soporte' },
 

@@ -191,8 +191,23 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       propósito (evita forzar a `PlanLimitsGuard` a volverse
       request-scoped). 127 tests en la suite completa (8 nuevos). Detalle
       en `docs/18-NOTIFICACIONES.md`.
-- [ ] **Etapa 15 — Mercado Pago para clientes**: señas, pago de servicios/
-      productos, checkout, webhooks, conciliación con Ventas/Turnos.
+- [x] **Etapa 15 — Mercado Pago para clientes**: `TenantIntegration`
+      (credenciales de Mercado Pago cifradas AES-256-GCM por negocio,
+      validadas contra la API real antes de guardarse) + `Deposit` (señas
+      1:1 con `Appointment`). `mercado-pago-client.ts` extrae las
+      funciones de comunicación con Mercado Pago de la Etapa 5 a funciones
+      puras parametrizadas por credenciales, reusadas tanto por la cuenta
+      de LA PLATAFORMA (env vars, sin cambio de comportamiento) como por
+      la de CADA negocio. Webhook por tenant
+      (`/webhooks/mercado-pago/tenant/:tenantId`, separado del de
+      plataforma) resuelve credenciales y firma de ESE tenant antes de
+      procesar; idempotente por `Deposit.mpPaymentId` único (sin ledger
+      aparte, a diferencia de `SubscriptionPayment`, porque una seña es un
+      cobro único). Pago de servicios/productos sin turno y reconciliación
+      con `Sale` quedan deliberadamente fuera — no hay página pública
+      todavía desde dónde originarlos (Etapa 18). Permisos nuevos
+      `integraciones.gestionar`/`senas.gestionar`. 135 tests en la suite
+      completa (8 nuevos). Detalle en `docs/19-MERCADO-PAGO-CLIENTES.md`.
 - [ ] **Etapa 16 — WhatsApp (Meta Cloud API)**: conexión de cuenta,
       confirmaciones/recordatorios/cancelaciones, flujo de reserva por chat.
 - [ ] **Etapa 17 — Instagram / Facebook (Meta)**.
@@ -214,6 +229,6 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 15 del roadmap: Mercado Pago para clientes (señas,
-pago de servicios/productos, checkout, webhooks, conciliación con Ventas/
-Turnos).
+Continuar con la Etapa 16 del roadmap: WhatsApp (Meta Cloud API) —
+conexión de cuenta, confirmaciones/recordatorios/cancelaciones, flujo de
+reserva por chat.

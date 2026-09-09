@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 14)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 15)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -8,9 +8,11 @@ Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6),
 Profesionales (Etapa 7), Servicios (Etapa 8), Horarios (Etapa 9), Agenda
 y Turnos (Etapa 10), Productos e Inventario (Etapa 11), Ventas + Caja +
 Gastos + Comisiones (Etapa 12), Fidelización — Puntos/Gift Cards/
-Referidos/Promociones (Etapa 13) y Notificaciones — centro + avisos
-internos de stock bajo y límite de plan (Etapa 14). Ver `../docs/` para el
-diseño completo (arquitectura, base de datos, seguridad, roadmap).
+Referidos/Promociones (Etapa 13), Notificaciones — centro + avisos
+internos de stock bajo y límite de plan (Etapa 14) y Mercado Pago para
+clientes — integraciones por negocio + señas de turnos (Etapa 15). Ver
+`../docs/` para el diseño completo (arquitectura, base de datos,
+seguridad, roadmap).
 
 ## Requisitos
 
@@ -350,6 +352,31 @@ curl -X PATCH http://localhost:3000/api/v1/notifications/read-all \
 # endpoint para dispararlos a mano.
 ```
 
+## Flujo mínimo de prueba manual — Mercado Pago para clientes (señas)
+
+```bash
+# 1) Conectar la cuenta de Mercado Pago DEL NEGOCIO (se valida contra
+#    GET /users/me antes de guardar; usar credenciales de TEST)
+curl -X POST http://localhost:3000/api/v1/integrations/mercado-pago/connect \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"accessToken":"TEST-...","publicKey":"TEST-...","webhookSecret":"<secreto configurado en Tus integraciones>"}'
+
+# 2) Generar una seña para un turno existente (devuelve el link de checkout)
+curl -X POST http://localhost:3000/api/v1/deposits \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"appointmentId":"<appointmentId>","amount":1500}'
+
+# 3) Ver el estado de una seña (solo cambia vía webhook, nunca a mano)
+curl http://localhost:3000/api/v1/deposits/<depositId> \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 4) El webhook (POST /webhooks/mercado-pago/tenant/:tenantId) lo llama
+#    Mercado Pago — se prueba con el simulador de webhooks del dashboard
+#    DE LA CUENTA CONECTADA EN EL PASO 1 (firma con SU webhook secret).
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -400,14 +427,20 @@ src/
 ├── referrals/                                    # referidos entre clientes: registrar/completar
 ├── promotions/                                    # catálogo de promociones (CRUD, sin aplicación a Sale)
 ├── notifications/                                  # centro de notificaciones + avisos internos (stock bajo, límite de plan)
-├── common/dto/                         # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
+├── integrations/                                    # TenantIntegration: conectar/desconectar Mercado Pago por negocio
+├── deposits/                                          # señas para turnos (checkout con la cuenta del negocio)
+├── common/
+│   ├── dto/                            # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
+│   └── crypto/                          # cifrado AES-256-GCM de credenciales por tenant
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
 ├── plan-limits/                     # PlanLimitsService + PlanLimitsGuard (límites de plan)
 ├── plan-info/                        # GET /plan — plan actual + uso vs. límites
-├── mercado-pago/                      # MercadoPagoService encapsulado (única integración con la API real)
+├── mercado-pago/                      # MercadoPagoService (plataforma) + mercado-pago-client.ts (funciones puras compartidas)
 ├── subscriptions/                      # elegir plan, checkout, estado de la suscripción (lado negocio)
-├── webhooks/mercado-pago/               # recibe y procesa notificaciones de pago (público, firma validada)
+├── webhooks/
+│   ├── mercado-pago/                     # notificaciones de pago de SUSCRIPCIÓN (cuenta de la plataforma)
+│   └── mercado-pago-tenant/               # notificaciones de pago de SEÑAS (cuenta de cada negocio, por tenantId en la URL)
 ├── platform-admin/                       # todo lo de SUPER ADMIN — dominio de auth separado
 │   ├── auth/                              # login+MFA en 2 pasos, JWT/estrategia propios
 │   ├── tenants/                            # alta/búsqueda/suspender/reactivar/cancelar/asignar plan

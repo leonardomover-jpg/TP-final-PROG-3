@@ -1,11 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { createHmac, timingSafeEqual } from 'crypto';
-import {
-  CreatePreferenceInput,
-  CreatePreferenceResult,
-  MercadoPagoPayment,
-  WebhookSignatureInput,
-} from './mercado-pago.types';
+import * as client from './mercado-pago-client';
+import { CreatePreferenceInput, CreatePreferenceResult, MercadoPagoPayment, WebhookSignatureInput } from './mercado-pago.types';
 
 /**
  * Encapsula TODA la comunicación con Mercado Pago (doc 01 §5, principio del
@@ -17,7 +12,12 @@ import {
  * Es la cuenta de Mercado Pago DE LA PLATAFORMA (cobra la suscripción SaaS
  * a cada negocio) — no confundir con Mercado Pago para clientes finales del
  * negocio (señas/ventas), que es un `TenantIntegration` por-negocio de la
- * Etapa 15 (doc 05 §6).
+ * Etapa 15 (doc 05 §6, `src/integrations/`, `src/deposits/`). Esta clase es
+ * un wrapper fino sobre `mercado-pago-client.ts` (funciones puras
+ * parametrizadas por credenciales, extraídas en la Etapa 15 para
+ * reusarlas también con las credenciales cifradas de cada tenant) que
+ * resuelve las credenciales desde variables de entorno — su comportamiento
+ * externo es idéntico al de antes de esa extracción.
  *
  * Fuente de la forma exacta de la API (endpoint, headers, algoritmo de
  * firma): documentación oficial de Mercado Pago Developers (Checkout Pro /
@@ -26,22 +26,17 @@ import {
  */
 @Injectable()
 export class MercadoPagoService {
-  private readonly baseUrl = process.env.MERCADO_PAGO_BASE_URL || 'https://api.mercadopago.com';
-
-  private get accessToken(): string {
-    const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-    if (!token) {
+  private get credentials(): client.MercadoPagoCredentials {
+    const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+    if (!accessToken || !webhookSecret) {
       throw new InternalServerErrorException('Mercado Pago no está configurado en este ambiente.');
     }
-    return token;
-  }
-
-  private get webhookSecret(): string {
-    const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
-    if (!secret) {
-      throw new InternalServerErrorException('Mercado Pago no está configurado en este ambiente.');
-    }
-    return secret;
+    return {
+      baseUrl: process.env.MERCADO_PAGO_BASE_URL || 'https://api.mercadopago.com',
+      accessToken,
+      webhookSecret,
+    };
   }
 
   // POST /checkout/preferences — Checkout Pro. Devuelve init_point (URL de
@@ -54,64 +49,14 @@ export class MercadoPagoService {
     const notificationUrl = process.env.APP_PUBLIC_URL
       ? `${process.env.APP_PUBLIC_URL}/api/v1/webhooks/mercado-pago`
       : undefined;
-
-    const response = await fetch(`${this.baseUrl}/checkout/preferences`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        items: [
-          {
-            title: input.title,
-            quantity: input.quantity,
-            unit_price: input.unitPrice,
-            currency_id: 'ARS',
-          },
-        ],
-        external_reference: input.externalReference,
-        notification_url: notificationUrl,
-        back_urls: input.backUrls,
-      }),
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new InternalServerErrorException(
-        `Mercado Pago rechazó la creación de la preferencia de pago: ${body}`,
-      );
-    }
-
-    const data = await response.json();
-    return {
-      id: String(data.id),
-      initPoint: data.init_point,
-      sandboxInitPoint: data.sandbox_init_point,
-    };
+    return client.createPreference(this.credentials, input, notificationUrl);
   }
 
   // GET /v1/payments/{id} — se llama SIEMPRE después de validar la firma
   // del webhook, nunca se confía en los datos que vengan en el body de la
   // notificación (que solo trae el id, no el estado real del pago).
   async getPayment(paymentId: string): Promise<MercadoPagoPayment> {
-    const response = await fetch(`${this.baseUrl}/v1/payments/${paymentId}`, {
-      headers: { Authorization: `Bearer ${this.accessToken}` },
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new InternalServerErrorException(`No se pudo consultar el pago en Mercado Pago: ${body}`);
-    }
-
-    const data = await response.json();
-    return {
-      id: String(data.id),
-      status: data.status,
-      externalReference: data.external_reference ?? null,
-      transactionAmount: data.transaction_amount,
-      raw: data,
-    };
+    return client.getPayment(this.credentials, paymentId);
   }
 
   // Valida el header `x-signature` (formato "ts=...,v1=...") reconstruyendo
@@ -122,40 +67,6 @@ export class MercadoPagoService {
   // integraciones" del dashboard de Mercado Pago; comparación en tiempo
   // constante para no filtrar el secreto por timing attack.
   verifyWebhookSignature(input: WebhookSignatureInput): boolean {
-    const parts = new Map(
-      input.xSignature.split(',').map((part) => {
-        const [key, value] = part.split('=');
-        return [key?.trim(), value?.trim()];
-      }),
-    );
-    const ts = parts.get('ts');
-    const v1 = parts.get('v1');
-    if (!ts || !v1) {
-      return false;
-    }
-
-    let manifest = '';
-    if (input.dataId) {
-      manifest += `id:${input.dataId.toLowerCase()};`;
-    }
-    if (input.xRequestId) {
-      manifest += `request-id:${input.xRequestId};`;
-    }
-    manifest += `ts:${ts};`;
-
-    const expectedHex = createHmac('sha256', this.webhookSecret).update(manifest).digest('hex');
-
-    let expectedBuffer: Buffer;
-    let receivedBuffer: Buffer;
-    try {
-      expectedBuffer = Buffer.from(expectedHex, 'hex');
-      receivedBuffer = Buffer.from(v1, 'hex');
-    } catch {
-      return false;
-    }
-    if (expectedBuffer.length !== receivedBuffer.length) {
-      return false;
-    }
-    return timingSafeEqual(expectedBuffer, receivedBuffer);
+    return client.verifyWebhookSignature(this.credentials, input);
   }
 }

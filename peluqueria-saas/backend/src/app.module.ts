@@ -25,6 +25,9 @@ import { GiftCardsModule } from './gift-cards/gift-cards.module';
 import { ReferralsModule } from './referrals/referrals.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { IntegrationsModule } from './integrations/integrations.module';
+import { DepositsModule } from './deposits/deposits.module';
+import { MercadoPagoTenantWebhookModule } from './webhooks/mercado-pago-tenant/mercado-pago-tenant-webhook.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -73,6 +76,9 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     ReferralsModule,
     PromotionsModule,
     NotificationsModule,
+    IntegrationsModule,
+    DepositsModule,
+    MercadoPagoTenantWebhookModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,

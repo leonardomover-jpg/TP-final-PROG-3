@@ -73,8 +73,15 @@ repositorio — no comparten código, base de datos ni dependencias.
   stock bajo (al cruzar el mínimo, desde Productos y Ventas) y cercanía al
   límite del plan (75%/90%, sin duplicar avisos). Canales externos
   (WhatsApp, email) quedan para etapas futuras.
+- ✅ **Etapa 15 — Mercado Pago para clientes**: cada negocio conecta su
+  PROPIA cuenta de Mercado Pago (credenciales cifradas AES-256-GCM,
+  validadas contra la API real antes de guardarse) para cobrar señas que
+  confirman un turno — checkout hospedado por Mercado Pago, webhook por
+  tenant idempotente. Pago de servicios/productos sin turno y
+  reconciliación con Ventas quedan fuera hasta que exista una página
+  pública (Etapa 18) desde dónde originarlos.
 
-127 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+135 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -280,6 +287,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md`](docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md) | Etapa 12: Sale/CashRegister/Expense, ventas mixtas, pagos combinados, arqueo de caja, comisiones |
 | [`docs/17-FIDELIZACION.md`](docs/17-FIDELIZACION.md) | Etapa 13: LoyaltyPointsTransaction/GiftCard/Referral/Promotion, cuatro módulos independientes gateados por Feature Flags |
 | [`docs/18-NOTIFICACIONES.md`](docs/18-NOTIFICACIONES.md) | Etapa 14: Notification/CommunicationRead, centro de notificaciones + consumo de Comunicaciones + avisos de stock bajo y límite de plan |
+| [`docs/19-MERCADO-PAGO-CLIENTES.md`](docs/19-MERCADO-PAGO-CLIENTES.md) | Etapa 15: TenantIntegration/Deposit, Mercado Pago por negocio (credenciales cifradas) para señas de turnos |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -295,6 +303,6 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 15 del roadmap: Mercado Pago para clientes (señas,
-pago de servicios/productos, checkout, webhooks, conciliación con Ventas/
-Turnos), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 16 del roadmap: WhatsApp (Meta Cloud API) —
+conexión de cuenta, confirmaciones/recordatorios/cancelaciones, flujo de
+reserva por chat, según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
