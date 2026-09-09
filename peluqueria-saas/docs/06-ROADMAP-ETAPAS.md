@@ -208,8 +208,26 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       todavía desde dónde originarlos (Etapa 18). Permisos nuevos
       `integraciones.gestionar`/`senas.gestionar`. 135 tests en la suite
       completa (8 nuevos). Detalle en `docs/19-MERCADO-PAGO-CLIENTES.md`.
-- [ ] **Etapa 16 — WhatsApp (Meta Cloud API)**: conexión de cuenta,
-      confirmaciones/recordatorios/cancelaciones, flujo de reserva por chat.
+- [x] **Etapa 16 — WhatsApp (Meta Cloud API)**: `TenantIntegration`
+      extendido con `provider: "whatsapp"` (mismo cifrado AES-256-GCM de
+      la Etapa 15, credenciales validadas contra la API real antes de
+      guardarse). `whatsapp-client.ts` (mismo molde que
+      `mercado-pago-client.ts`): envío de texto libre, verificación de
+      firma `X-Hub-Signature-256` sobre el body crudo (requirió
+      `rawBody: true` en `NestFactory.create`, sin afectar el resto de los
+      endpoints). Confirmar/cancelar un turno (Etapa 10) dispara un
+      WhatsApp best-effort (nunca rompe el flujo si falla o no está
+      conectado); recordatorio disparado A MANO
+      (`POST /appointments/:id/send-reminder`, sin scheduler todavía —
+      "Jobs en background" no existe como Capa Transversal aún). Webhook
+      por tenant recibe mensajes entrantes y los traduce en una
+      `Notification` (Etapa 14) para el staff — sin motor conversacional:
+      el "flujo de reserva por chat" del roadmap queda deliberadamente
+      diferido (necesita un diseño conversacional concreto que el pedido
+      no especifica, más el scheduler que todavía no existe). Gateado por
+      el flag `whatsapp` (ya sembrado desde el arranque, sin uso hasta
+      esta etapa). 147 tests en la suite completa (12 nuevos). Detalle en
+      `docs/20-WHATSAPP.md`.
 - [ ] **Etapa 17 — Instagram / Facebook (Meta)**.
 - [ ] **Etapa 18 — Página pública + QR + PWA**.
 - [ ] **Etapa 19 — Sucursales (multi-sucursal completo)**: permisos por
@@ -229,6 +247,4 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 16 del roadmap: WhatsApp (Meta Cloud API) —
-conexión de cuenta, confirmaciones/recordatorios/cancelaciones, flujo de
-reserva por chat.
+Continuar con la Etapa 17 del roadmap: Instagram / Facebook (Meta).

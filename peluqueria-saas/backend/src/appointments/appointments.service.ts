@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException, 
 import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../prisma/tenant-prisma.service';
 import { ScheduleService } from '../schedule/schedule.service';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments.query.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
@@ -25,6 +26,7 @@ export class AppointmentsService {
   constructor(
     private readonly tenantPrisma: TenantPrismaService,
     private readonly scheduleService: ScheduleService,
+    private readonly whatsAppService: WhatsAppService,
   ) {}
 
   findAll(query: ListAppointmentsQueryDto) {
@@ -158,20 +160,26 @@ export class AppointmentsService {
 
   async confirm(id: string) {
     await this.assertTransition(id, ['pending']);
-    return this.tenantPrisma.client.appointment.update({
+    const appointment = await this.tenantPrisma.client.appointment.update({
       where: { id },
       data: { status: 'confirmed' },
       include: APPOINTMENT_INCLUDE,
     });
+    // Best-effort (Etapa 16): nunca rompe la confirmación si falla el
+    // envío o el negocio no tiene WhatsApp conectado — ver WhatsAppService.
+    await this.whatsAppService.notifyAppointmentConfirmed(this.tenantPrisma.tenantId, appointment);
+    return appointment;
   }
 
   async cancel(id: string, dto: CancelAppointmentDto) {
     await this.assertTransition(id, ACTIVE_STATUSES);
-    return this.tenantPrisma.client.appointment.update({
+    const appointment = await this.tenantPrisma.client.appointment.update({
       where: { id },
       data: { status: 'cancelled', cancelReason: dto.reason },
       include: APPOINTMENT_INCLUDE,
     });
+    await this.whatsAppService.notifyAppointmentCancelled(this.tenantPrisma.tenantId, appointment);
+    return appointment;
   }
 
   async complete(id: string) {
@@ -190,5 +198,25 @@ export class AppointmentsService {
       data: { status: 'no_show' },
       include: APPOINTMENT_INCLUDE,
     });
+  }
+
+  // Disparo MANUAL (Etapa 16, doc `20-WHATSAPP.md` §6) — sin "Jobs en
+  // background" (Capa Transversal, doc 01) todavía no hay forma de
+  // programar un recordatorio automático en el momento justo antes del
+  // turno; mientras tanto, el mostrador lo dispara a mano cuando lo
+  // necesita.
+  async sendReminder(id: string) {
+    const appointment = await this.tenantPrisma.client.appointment.findUnique({
+      where: { id },
+      include: APPOINTMENT_INCLUDE,
+    });
+    if (!appointment) {
+      throw new NotFoundException('Turno no encontrado.');
+    }
+    if (!ACTIVE_STATUSES.includes(appointment.status)) {
+      throw new BadRequestException(`No se puede recordar un turno "${appointment.status}".`);
+    }
+    await this.whatsAppService.sendReminder(this.tenantPrisma.tenantId, appointment);
+    return { sent: true };
   }
 }

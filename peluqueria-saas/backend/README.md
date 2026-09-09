@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 15)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 16)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -9,10 +9,11 @@ Profesionales (Etapa 7), Servicios (Etapa 8), Horarios (Etapa 9), Agenda
 y Turnos (Etapa 10), Productos e Inventario (Etapa 11), Ventas + Caja +
 Gastos + Comisiones (Etapa 12), Fidelización — Puntos/Gift Cards/
 Referidos/Promociones (Etapa 13), Notificaciones — centro + avisos
-internos de stock bajo y límite de plan (Etapa 14) y Mercado Pago para
-clientes — integraciones por negocio + señas de turnos (Etapa 15). Ver
-`../docs/` para el diseño completo (arquitectura, base de datos,
-seguridad, roadmap).
+internos de stock bajo y límite de plan (Etapa 14), Mercado Pago para
+clientes — integraciones por negocio + señas de turnos (Etapa 15) y
+WhatsApp (Meta Cloud API) — confirmaciones/cancelaciones/recordatorios por
+negocio (Etapa 16). Ver `../docs/` para el diseño completo (arquitectura,
+base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -377,6 +378,32 @@ curl http://localhost:3000/api/v1/deposits/<depositId> \
 #    DE LA CUENTA CONECTADA EN EL PASO 1 (firma con SU webhook secret).
 ```
 
+## Flujo mínimo de prueba manual — WhatsApp
+
+Requiere el plan Premium (incluye todos los flags) y habilitar `whatsapp`
+para el negocio — ver el flujo de Planes y Feature Flags más arriba.
+
+```bash
+# 1) Conectar la cuenta de WhatsApp Business DEL NEGOCIO (se valida contra
+#    GET /{phoneNumberId} antes de guardar)
+curl -X POST http://localhost:3000/api/v1/integrations/whatsapp/connect \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"accessToken":"EAA...","phoneNumberId":"109876543210987","appSecret":"<App Secret de Meta>","verifyToken":"<elegido por el negocio>"}'
+
+# 2) Confirmar un turno dispara el WhatsApp de confirmación solo (best-effort)
+curl -X POST http://localhost:3000/api/v1/appointments/<appointmentId>/confirm \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 3) Recordatorio manual (sin scheduler todavía)
+curl -X POST http://localhost:3000/api/v1/appointments/<appointmentId>/send-reminder \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 4) El webhook (GET para el handshake, POST para mensajes entrantes en
+#    /webhooks/whatsapp/tenant/:tenantId) lo llama Meta — configurar esa
+#    URL y el verify_token del paso 1 en el dashboard de la app de Meta.
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -427,8 +454,9 @@ src/
 ├── referrals/                                    # referidos entre clientes: registrar/completar
 ├── promotions/                                    # catálogo de promociones (CRUD, sin aplicación a Sale)
 ├── notifications/                                  # centro de notificaciones + avisos internos (stock bajo, límite de plan)
-├── integrations/                                    # TenantIntegration: conectar/desconectar Mercado Pago por negocio
+├── integrations/                                    # TenantIntegration: conectar/desconectar Mercado Pago/WhatsApp por negocio
 ├── deposits/                                          # señas para turnos (checkout con la cuenta del negocio)
+├── whatsapp/                                            # WhatsAppService (envío) + whatsapp-client.ts (Meta Cloud API)
 ├── common/
 │   ├── dto/                            # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
 │   └── crypto/                          # cifrado AES-256-GCM de credenciales por tenant
@@ -440,7 +468,8 @@ src/
 ├── subscriptions/                      # elegir plan, checkout, estado de la suscripción (lado negocio)
 ├── webhooks/
 │   ├── mercado-pago/                     # notificaciones de pago de SUSCRIPCIÓN (cuenta de la plataforma)
-│   └── mercado-pago-tenant/               # notificaciones de pago de SEÑAS (cuenta de cada negocio, por tenantId en la URL)
+│   ├── mercado-pago-tenant/               # notificaciones de pago de SEÑAS (cuenta de cada negocio, por tenantId en la URL)
+│   └── whatsapp-tenant/                    # handshake + mensajes entrantes de WhatsApp (cuenta de cada negocio, por tenantId)
 ├── platform-admin/                       # todo lo de SUPER ADMIN — dominio de auth separado
 │   ├── auth/                              # login+MFA en 2 pasos, JWT/estrategia propios
 │   ├── tenants/                            # alta/búsqueda/suspender/reactivar/cancelar/asignar plan

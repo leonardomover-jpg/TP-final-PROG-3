@@ -54,4 +54,12 @@ export class AppointmentsController {
   markNoShow(@Param('id') id: string) {
     return this.appointmentsService.markNoShow(id);
   }
+
+  // Disparo manual (Etapa 16): sin "Jobs en background" todavía no hay
+  // recordatorio automático — ver doc `20-WHATSAPP.md` §6.
+  @RequirePermissions('turnos.editar')
+  @Post(':id/send-reminder')
+  sendReminder(@Param('id') id: string) {
+    return this.appointmentsService.sendReminder(id);
+  }
 }

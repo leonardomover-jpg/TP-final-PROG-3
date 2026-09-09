@@ -4,7 +4,12 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true (Etapa 16) — expone request.rawBody (Buffer) además del
+  // body ya parseado, sin cambiar nada para el resto de los endpoints.
+  // Lo necesita el webhook de WhatsApp: la firma X-Hub-Signature-256 de
+  // Meta se calcula sobre los bytes crudos del body, no sobre el JSON ya
+  // parseado (ver `whatsapp-client.ts`).
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(

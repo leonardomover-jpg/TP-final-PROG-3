@@ -80,8 +80,15 @@ repositorio — no comparten código, base de datos ni dependencias.
   tenant idempotente. Pago de servicios/productos sin turno y
   reconciliación con Ventas quedan fuera hasta que exista una página
   pública (Etapa 18) desde dónde originarlos.
+- ✅ **Etapa 16 — WhatsApp (Meta Cloud API)**: cada negocio conecta su
+  PROPIA cuenta de WhatsApp Business (mismo cifrado que Mercado Pago).
+  Confirmar/cancelar un turno avisa por WhatsApp de forma best-effort
+  (nunca rompe el flujo si falla), recordatorio manual disponible (sin
+  scheduler todavía), webhook por tenant recibe mensajes entrantes y avisa
+  al staff por su centro de notificaciones. El flujo de reserva por chat
+  queda deliberadamente diferido — ver `docs/20-WHATSAPP.md` §8.
 
-135 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+147 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -288,6 +295,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/17-FIDELIZACION.md`](docs/17-FIDELIZACION.md) | Etapa 13: LoyaltyPointsTransaction/GiftCard/Referral/Promotion, cuatro módulos independientes gateados por Feature Flags |
 | [`docs/18-NOTIFICACIONES.md`](docs/18-NOTIFICACIONES.md) | Etapa 14: Notification/CommunicationRead, centro de notificaciones + consumo de Comunicaciones + avisos de stock bajo y límite de plan |
 | [`docs/19-MERCADO-PAGO-CLIENTES.md`](docs/19-MERCADO-PAGO-CLIENTES.md) | Etapa 15: TenantIntegration/Deposit, Mercado Pago por negocio (credenciales cifradas) para señas de turnos |
+| [`docs/20-WHATSAPP.md`](docs/20-WHATSAPP.md) | Etapa 16: WhatsApp Business por negocio, confirmaciones/cancelaciones/recordatorios, webhook por tenant |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -303,6 +311,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 16 del roadmap: WhatsApp (Meta Cloud API) —
-conexión de cuenta, confirmaciones/recordatorios/cancelaciones, flujo de
-reserva por chat, según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 17 del roadmap: Instagram / Facebook (Meta), según
+el detalle de `docs/06-ROADMAP-ETAPAS.md`.
