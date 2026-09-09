@@ -120,10 +120,19 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       generación de slots y sin superposición con turnos ya tomados es de
       la Etapa 10, que consume este cálculo. 76 tests en la suite completa
       (7 nuevos). Detalle en `docs/13-HORARIOS.md`.
-- [ ] **Etapa 10 — Agenda y Turnos**: vistas día/semana/mes/lista, motor de
-      disponibilidad (sin superposiciones), estados del turno, lista de
-      espera, señas (dependiente de Mercado Pago para clientes — Etapa 15),
-      control de no-shows.
+- [x] **Etapa 10 — Agenda y Turnos**: `Appointment`/`WaitlistEntry`
+      tenant-scoped. Motor de disponibilidad real en `AppointmentsService.create`:
+      valida pertenencia al tenant de sucursal/profesional/cliente/servicio,
+      que el profesional esté habilitado para el servicio (Etapa 8), que
+      el horario caiga dentro de `ScheduleService.getAvailability` (Etapa
+      9), y que no se superponga con otro turno activo del mismo
+      profesional. Estados con transiciones validadas (pending → confirmed
+      → completed, cancelled desde pending/confirmed, no_show desde
+      confirmed), lista de espera (reusa permisos `turnos.*`). Vistas
+      día/semana/mes/lista son el mismo `GET /appointments` con distinto
+      rango de fechas, sin endpoints separados. Señas quedan para la Etapa
+      15 (dependen de Mercado Pago para clientes). 85 tests en la suite
+      completa (9 nuevos). Detalle en `docs/14-AGENDA-TURNOS.md`.
 - [ ] **Etapa 11 — Productos e Inventario**: alta de productos, stock,
       alertas de stock mínimo, proveedores, compras.
 - [ ] **Etapa 12 — Ventas + Caja + Gastos + Comisiones**: ventas mixtas
@@ -155,9 +164,6 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 10 del roadmap: Agenda y Turnos — vistas día/
-semana/mes/lista, motor de disponibilidad real (generación de slots según
-`GET /schedule/availability` + duración del servicio, sin superposición
-con turnos ya tomados), estados del turno, lista de espera, señas
-(dependiente de Mercado Pago para clientes — Etapa 15), control de
-no-shows (según el detalle de más arriba).
+Continuar con la Etapa 11 del roadmap: Productos e Inventario — alta de
+productos, stock, alertas de stock mínimo, proveedores, compras (según el
+detalle de más arriba).

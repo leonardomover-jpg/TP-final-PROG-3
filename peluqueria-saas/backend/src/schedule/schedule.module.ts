@@ -5,5 +5,6 @@ import { ScheduleService } from './schedule.service';
 @Module({
   controllers: [ScheduleController],
   providers: [ScheduleService],
+  exports: [ScheduleService], // AppointmentsModule (Etapa 10) reusa getAvailability()
 })
 export class ScheduleModule {}

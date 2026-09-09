@@ -62,6 +62,8 @@ model Tenant {
   services             Service[]
   scheduleExceptions   ScheduleException[]
   holidayOverrides     TenantHolidayOverride[]
+  appointments         Appointment[]
+  waitlistEntries      WaitlistEntry[]
 
   @@index([status])
 }
@@ -110,9 +112,11 @@ model Branch {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  userBranches UserBranch[]
-  schedules    BranchSchedule[]
-  exceptions   ScheduleException[]
+  userBranches    UserBranch[]
+  schedules       BranchSchedule[]
+  exceptions      ScheduleException[]
+  appointments    Appointment[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([tenantId])
 }
@@ -213,22 +217,22 @@ model UserRole {
 // ─────────────────────────────────────────────────────────────────────────
 
 model Plan {
-  id                String   @id @default(cuid())
-  name              String
-  price             Decimal  @db.Decimal(12, 2)
-  billingPeriod     String   @default("monthly") // monthly | yearly
-  maxUsers          Int
-  maxProfessionals  Int
-  maxBranches       Int
-  maxClients        Int
-  status            String   @default("active") // active | archived
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  price            Decimal  @db.Decimal(12, 2)
+  billingPeriod    String   @default("monthly") // monthly | yearly
+  maxUsers         Int
+  maxProfessionals Int
+  maxBranches      Int
+  maxClients       Int
+  status           String   @default("active") // active | archived
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  tenants       Tenant[]
-  features      PlanFeature[]
+  tenants        Tenant[]
+  features       PlanFeature[]
   communications Communication[]
-  subscriptions Subscription[]
+  subscriptions  Subscription[]
 }
 
 model FeatureFlag {
@@ -289,16 +293,16 @@ model Subscription {
 }
 
 model SubscriptionPayment {
-  id               String       @id @default(cuid())
-  subscriptionId   String
-  subscription     Subscription @relation(fields: [subscriptionId], references: [id])
-  provider         String       // "mercado_pago"
+  id                String       @id @default(cuid())
+  subscriptionId    String
+  subscription      Subscription @relation(fields: [subscriptionId], references: [id])
+  provider          String // "mercado_pago"
   providerPaymentId String
-  amount           Decimal      @db.Decimal(12, 2)
-  currency         String       @default("ARS")
-  status           String       // pending | approved | rejected | refunded
-  rawPayload       Json
-  createdAt        DateTime     @default(now())
+  amount            Decimal      @db.Decimal(12, 2)
+  currency          String       @default("ARS")
+  status            String // pending | approved | rejected | refunded
+  rawPayload        Json
+  createdAt         DateTime     @default(now())
 
   @@unique([provider, providerPaymentId])
   @@index([subscriptionId])
@@ -326,7 +330,9 @@ model Client {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  clientNotes ClientNote[]
+  clientNotes     ClientNote[]
+  appointments    Appointment[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
@@ -375,9 +381,11 @@ model Professional {
   updatedAt            DateTime  @updatedAt
   deletedAt            DateTime?
 
-  schedules  ProfessionalSchedule[]
-  services   ServiceProfessional[]
-  exceptions ScheduleException[]
+  schedules       ProfessionalSchedule[]
+  services        ServiceProfessional[]
+  exceptions      ScheduleException[]
+  appointments    Appointment[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
@@ -422,7 +430,9 @@ model Service {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
-  professionals ServiceProfessional[]
+  professionals   ServiceProfessional[]
+  appointments    Appointment[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
@@ -528,6 +538,71 @@ model TenantHolidayOverride {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// AGENDA Y TURNOS (Etapa 10)
+// ─────────────────────────────────────────────────────────────────────────
+
+// Un turno = un servicio con un profesional, en una sucursal, para un
+// cliente. `endAt` se guarda calculado (startAt + Service.durationMinutes
+// al momento de la reserva) en vez de derivarse en cada lectura — así un
+// cambio posterior en la duración del servicio no reescribe turnos ya
+// tomados (doc `14-AGENDA-TURNOS.md` §3). Sin soporte para "un turno con
+// varios servicios" en esta etapa (ver doc §7) — cada turno es un
+// servicio; un cliente que quiere corte + color reserva dos turnos
+// consecutivos, que el motor de disponibilidad ya evita que se
+// superpongan con otros turnos de ESE profesional.
+model Appointment {
+  id             String       @id @default(cuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+  branchId       String
+  branch         Branch       @relation(fields: [branchId], references: [id])
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  clientId       String
+  client         Client       @relation(fields: [clientId], references: [id])
+  serviceId      String
+  service        Service      @relation(fields: [serviceId], references: [id])
+  startAt        DateTime
+  endAt          DateTime
+  status         String       @default("pending") // pending | confirmed | completed | cancelled | no_show
+  notes          String?
+  cancelReason   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([tenantId])
+  @@index([professionalId, startAt])
+  @@index([branchId, startAt])
+  @@index([clientId])
+}
+
+// Lista de espera (punto de la Etapa 10 del roadmap): un cliente que
+// quiere un turno pero no hay disponibilidad en la fecha que prefiere.
+// Sin motor de "auto-oferta" cuando se libera un lugar en esta etapa — es
+// una cola visible que el negocio gestiona a mano (llama al cliente, lo
+// convierte en turno); automatizar eso es Notificaciones (Etapa 14).
+model WaitlistEntry {
+  id             String        @id @default(cuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id])
+  branchId       String?
+  branch         Branch?       @relation(fields: [branchId], references: [id])
+  professionalId String?
+  professional   Professional? @relation(fields: [professionalId], references: [id])
+  clientId       String
+  client         Client        @relation(fields: [clientId], references: [id])
+  serviceId      String
+  service        Service       @relation(fields: [serviceId], references: [id])
+  preferredDate  DateTime?     @db.Date
+  notes          String?
+  status         String        @default("waiting") // waiting | booked | cancelled
+  createdAt      DateTime      @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // AUDITORÍA (transversal)
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -535,9 +610,9 @@ model AuditLog {
   id         String   @id @default(cuid())
   tenantId   String? // null = acción de SUPER ADMIN sobre la plataforma
   tenant     Tenant?  @relation(fields: [tenantId], references: [id])
-  actorType  String   // user | platform_admin | system | webhook
+  actorType  String // user | platform_admin | system | webhook
   actorId    String?
-  action     String   // ej. "service.price.updated", "user.login"
+  action     String // ej. "service.price.updated", "user.login"
   entityType String?
   entityId   String?
   beforeData Json?
@@ -555,16 +630,16 @@ model AuditLog {
 // ─────────────────────────────────────────────────────────────────────────
 
 model SupportTicket {
-  id                String    @id @default(cuid())
+  id                String   @id @default(cuid())
   tenantId          String
-  tenant            Tenant    @relation(fields: [tenantId], references: [id])
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
   subject           String
-  status            String    @default("open") // open | in_progress | resolved | closed
-  priority          String    @default("medium") // low | medium | high
+  status            String   @default("open") // open | in_progress | resolved | closed
+  priority          String   @default("medium") // low | medium | high
   createdByUserId   String
   assignedToAdminId String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   messages SupportTicketMessage[]
 
@@ -576,7 +651,7 @@ model SupportTicketMessage {
   id         String        @id @default(cuid())
   ticketId   String
   ticket     SupportTicket @relation(fields: [ticketId], references: [id])
-  authorType String        // user | platform_admin
+  authorType String // user | platform_admin
   authorId   String
   body       String
   createdAt  DateTime      @default(now())
@@ -592,7 +667,7 @@ model Communication {
   id               String   @id @default(cuid())
   title            String
   body             String
-  audienceType     String   // all | plan | tenants
+  audienceType     String // all | plan | tenants
   planId           String?
   plan             Plan?    @relation(fields: [planId], references: [id])
   createdByAdminId String

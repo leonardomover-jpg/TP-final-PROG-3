@@ -9,9 +9,9 @@ import { Prisma, PrismaClient } from '@prisma/client';
  *
  * Reglas por modelo (documentadas porque no son todas iguales):
  * - User / Branch / Client / Professional / Service / ScheduleException /
- *   Subscription / TenantFeatureFlag / AuditLog / SupportTicket: igualdad
- *   estricta de tenantId en todas las operaciones. Un tenant nunca ve ni
- *   escribe filas de otro tenant, punto.
+ *   Appointment / WaitlistEntry / Subscription / TenantFeatureFlag /
+ *   AuditLog / SupportTicket: igualdad estricta de tenantId en todas las
+ *   operaciones. Un tenant nunca ve ni escribe filas de otro tenant, punto.
  * - TenantHolidayOverride: mismo criterio que TenantFeatureFlag (clave
  *   compuesta [tenantId, holidayId]) — solo findMany/upsert intervenidos,
  *   ver ese bloque para el motivo.
@@ -195,6 +195,54 @@ export function tenantScopeExtension(tenantId: string) {
           },
           async count({ args, query }) {
             args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async create({ args, query }) {
+            args.data = { ...args.data, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
+        },
+        appointment: {
+          async findMany({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findFirst({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findUnique({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async update({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async count({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async create({ args, query }) {
+            args.data = { ...args.data, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
+        },
+        waitlistEntry: {
+          async findMany({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findUnique({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async update({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async delete({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
             return query(args);
           },
           async create({ args, query }) {

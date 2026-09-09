@@ -1,13 +1,14 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 9)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 10)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
 completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
 límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
 Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6),
-Profesionales (Etapa 7), Servicios (Etapa 8) y Horarios (Etapa 9). Ver
-`../docs/` para el diseño completo (arquitectura, base de datos,
-seguridad, roadmap).
+Profesionales (Etapa 7), Servicios (Etapa 8), Horarios (Etapa 9) y Agenda
+y Turnos — el motor de disponibilidad real (Etapa 10). Ver `../docs/`
+para el diseño completo (arquitectura, base de datos, seguridad,
+roadmap).
 
 ## Requisitos
 
@@ -205,6 +206,27 @@ curl "http://localhost:3000/api/v1/schedule/availability?date=2026-03-04&branchI
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Agenda y Turnos
+
+```bash
+# 1) Reservar un turno (falla con 400/409 si no pasa el motor de
+#    disponibilidad: profesional no habilitado, fuera de horario, o
+#    superpuesto con otro turno activo)
+curl -X POST http://localhost:3000/api/v1/appointments \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"branchId":"<branchId>","professionalId":"<professionalId>","clientId":"<clientId>","serviceId":"<serviceId>","startAt":"2026-03-02T10:00:00.000Z"}'
+
+# 2) Confirmar / completar / cancelar / marcar no-show
+curl -X POST http://localhost:3000/api/v1/appointments/<appointmentId>/confirm \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 3) Listar turnos de un rango de fechas (la vista día/semana/mes/lista
+#    del frontend es este mismo endpoint con distinto from/to)
+curl "http://localhost:3000/api/v1/appointments?from=2026-03-02T00:00:00.000Z&to=2026-03-08T23:59:59.000Z" \
+  -H "Authorization: Bearer <accessToken del negocio>"
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -242,6 +264,8 @@ src/
 ├── professionals/                   # CRUD de profesionales, horario semanal propio, vínculo a User
 ├── services/                         # CRUD de servicios, categoría, duración/precio, profesionales habilitados
 ├── schedule/                          # excepciones, feriados (override por negocio), disponibilidad combinada
+├── appointments/                       # turnos: motor de disponibilidad, estados, listado por rango
+├── waitlist/                            # lista de espera (reusa permisos turnos.*)
 ├── common/dto/                         # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
@@ -283,6 +307,7 @@ test/
 ├── professionals.spec.ts                           # CRUD, horario, vínculo a User, aislamiento, límite de plan
 ├── services.spec.ts                                # CRUD, profesionales habilitados, aislamiento cross-tenant
 ├── schedule.spec.ts                                # horario semanal, excepciones, feriados+override, disponibilidad
+├── appointments.spec.ts                            # motor de disponibilidad, transiciones, lista de espera
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

@@ -45,8 +45,14 @@ repositorio — no comparten código, base de datos ni dependencias.
   argentinos con override manual por negocio, y un endpoint de
   disponibilidad que combina las tres fuentes para responder "¿abierto tal
   día, y en qué horario?" — insumo directo de la Etapa 10 (Agenda).
+- ✅ **Etapa 10 — Agenda y Turnos**: motor de disponibilidad real —
+  reserva un turno solo si el profesional está habilitado para el
+  servicio, el horario cae dentro de su disponibilidad real y no se
+  superpone con otro turno activo. Estados del turno con transiciones
+  validadas, lista de espera. Señas quedan para la Etapa 15 (Mercado Pago
+  para clientes).
 
-76 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+85 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -178,9 +184,25 @@ Implementado en Etapa 9 (detalle completo en
   está abierto y en qué horario — el primer insumo real del motor de
   turnos de la Etapa 10.
 
+Implementado en Etapa 10 (detalle completo en
+[`docs/14-AGENDA-TURNOS.md`](docs/14-AGENDA-TURNOS.md)):
+
+- `POST /appointments`: reserva un turno solo si pasa las 4 validaciones
+  del motor de disponibilidad (pertenencia al tenant, profesional
+  habilitado para el servicio, horario dentro de la disponibilidad real,
+  sin superposición con otro turno activo del mismo profesional).
+- Estados del turno con transiciones validadas explícitamente (`pending` →
+  `confirmed` → `completed`/`no_show`, `cancelled` desde `pending` o
+  `confirmed`) — nunca un cambio de estado inválido silencioso.
+- Un único `GET /appointments?from=&to=&...` para las vistas de día/
+  semana/mes/lista (el mismo filtro por rango de fechas, el frontend arma
+  la grilla según la vista).
+- Lista de espera (`/waitlist`) para cuando no hay disponibilidad en la
+  fecha que el cliente prefiere.
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
-El resto de los módulos de negocio (turnos, ventas, inventario, etc.) se
+El resto de los módulos de negocio (inventario, ventas, etc.) se
 implementan en las etapas siguientes, en el orden definido en
 [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
 
@@ -201,6 +223,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/11-PROFESIONALES.md`](docs/11-PROFESIONALES.md) | Etapa 7: modelo Professional/ProfessionalSchedule, CRUD, horario semanal propio, vínculo opcional a User, límite de plan |
 | [`docs/12-SERVICIOS.md`](docs/12-SERVICIOS.md) | Etapa 8: modelo Service/ServiceProfessional, CRUD, categoría, duración/precio, profesionales habilitados |
 | [`docs/13-HORARIOS.md`](docs/13-HORARIOS.md) | Etapa 9: BranchSchedule, ScheduleException, catálogo de feriados con override, endpoint de disponibilidad combinada |
+| [`docs/14-AGENDA-TURNOS.md`](docs/14-AGENDA-TURNOS.md) | Etapa 10: Appointment/WaitlistEntry, motor de disponibilidad real, estados del turno, lista de espera |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -216,8 +239,6 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 10 del roadmap: Agenda y Turnos — motor de
-disponibilidad real (generación de slots sobre `GET
-/schedule/availability` + duración del servicio, sin superposición),
-estados del turno, lista de espera, señas, control de no-shows, según el
+Continuar con la Etapa 11 del roadmap: Productos e Inventario — alta de
+productos, stock, alertas de stock mínimo, proveedores, compras, según el
 detalle de `docs/06-ROADMAP-ETAPAS.md`.

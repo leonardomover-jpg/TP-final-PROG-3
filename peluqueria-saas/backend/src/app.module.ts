@@ -12,6 +12,8 @@ import { ClientsModule } from './clients/clients.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
 import { ServicesModule } from './services/services.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { AppointmentsModule } from './appointments/appointments.module';
+import { WaitlistModule } from './waitlist/waitlist.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -47,6 +49,8 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     ProfessionalsModule,
     ServicesModule,
     ScheduleModule,
+    AppointmentsModule,
+    WaitlistModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,
