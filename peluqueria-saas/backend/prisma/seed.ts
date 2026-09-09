@@ -95,6 +95,7 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
     module: 'mensajes',
     description: 'Responder mensajes de Facebook/Instagram entrantes',
   },
+  { key: 'ia.ver', module: 'ia', description: 'Ver insights generados por IA sobre estadísticas y clientes' },
 
   { key: 'soporte.ver', module: 'soporte', description: 'Ver tickets de soporte del negocio' },
   { key: 'soporte.crear', module: 'soporte', description: 'Crear tickets de soporte' },

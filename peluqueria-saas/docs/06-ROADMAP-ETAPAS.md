@@ -287,7 +287,17 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       `groupBy`). `pdfkit`/`exceljs` nuevos, CSV armado a mano. 190 tests
       en la suite completa (9 nuevos). Detalle en
       `docs/24-DASHBOARD-REPORTES.md`.
-- [ ] **Etapa 21 — IA (opcional)**.
+- [x] **Etapa 21 — IA (opcional)**: `GET /ai/insights` (gateado por el
+      flag `ai`, permiso `ia.ver`) arma un resumen con
+      `ReportsService.getDashboard` (Etapa 20) + conteo de clientes del
+      tenant y se lo manda a la API de Anthropic (Claude) para generar 3-5
+      insights accionables en texto. Credenciales de LA PLATAFORMA
+      (`AI_API_KEY`, no por-tenant — no hay "cuenta de IA" que cada
+      negocio conecte, a diferencia de Mercado Pago/WhatsApp/Meta).
+      "Nunca cruza tenants" (doc 01 §2): el contexto que se le manda al
+      modelo se arma exclusivamente con datos ya acotados al tenant del
+      JWT. 195 tests en la suite completa (5 nuevos). Detalle en
+      `docs/25-IA.md`.
 - [ ] **Etapa 22 — Auditoría avanzada y Observabilidad** (dashboards de
       logs/métricas, más allá del `AuditLog` ya modelado en Etapa 1).
 - [ ] **Etapa 23 — Seguridad hardening**: RLS de Postgres activado (ver doc
@@ -301,4 +311,5 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 21 del roadmap: IA (opcional).
+Continuar con la Etapa 22 del roadmap: Auditoría avanzada y
+Observabilidad.

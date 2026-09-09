@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 20)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 21)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -17,7 +17,8 @@ negocio (Etapa 16), Instagram / Facebook (Meta) — mensajería por negocio
 disponibilidad y reserva sin login + QR — sin proyecto de frontend en este
 repo, la página HTML y la PWA quedan diferidas), y Sucursales — permisos
 por sucursal + inventario por sucursal (Etapa 19), y Dashboard,
-Estadísticas y Reportes — CSV/PDF/Excel (Etapa 20). Ver `../docs/` para el
+Estadísticas y Reportes — CSV/PDF/Excel (Etapa 20), e IA — insights sobre
+estadísticas y clientes (Etapa 21, opcional). Ver `../docs/` para el
 diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
@@ -539,6 +540,18 @@ curl "http://localhost:3000/api/v1/reports/sales/export?format=pdf" \
   -H "Authorization: Bearer <accessToken del negocio>" -o ventas.pdf
 ```
 
+## Flujo mínimo de prueba manual — IA (Etapa 21)
+
+Requiere el plan Premium y habilitar `ai` para el negocio (ver el flujo
+de Planes y Feature Flags más arriba), y `AI_API_KEY` configurada en el
+`.env` del servidor (API de Anthropic).
+
+```bash
+curl "http://localhost:3000/api/v1/ai/insights" \
+  -H "Authorization: Bearer <accessToken del negocio>"
+# -> { "insights": "1. ...\n2. ...", "basedOn": { "sales": {...}, "clients": {...}, ... } }
+```
+
 ## Estructura
 
 ```
@@ -597,6 +610,7 @@ src/
 │   └── subscriptions/                            # ver suscripciones/vencimientos de todos los negocios
 ├── public-booking/                                 # catálogo/disponibilidad/reserva sin login (Etapa 18, solo backend) + QR
 ├── reports/                                          # dashboard de métricas + export CSV/PDF/Excel (Etapa 20)
+├── ai/                                                 # GET /ai/insights — resumen generado por IA (Etapa 21, opcional)
 ├── common/filters/                                 # manejo de errores (nunca se expone detalle técnico)
 └── app.module.ts                                    # wiring de guards globales + throttler
 
@@ -626,6 +640,7 @@ test/
 ├── public-booking.spec.ts                          # catálogo/disponibilidad/reserva sin login, límite de plan, QR, aislamiento
 ├── branches-multi.spec.ts                          # BranchAccessGuard (UserBranch/sucursales.todas), inventario por sucursal
 ├── reports.spec.ts                                 # dashboard, export CSV/PDF/Excel, permisos, aislamiento
+├── ai.spec.ts                                      # insights de IA (mockeado), flag, credenciales, aislamiento
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

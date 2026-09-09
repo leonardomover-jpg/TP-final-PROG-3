@@ -116,8 +116,13 @@ repositorio — no comparten código, base de datos ni dependencias.
   csv|pdf|xlsx`. Todo agregado con `findMany` en memoria, nunca `groupBy`/
   `aggregate` de Prisma (no interceptados por `tenant-scope.extension.ts`,
   mezclarían datos entre tenants).
+- ✅ **Etapa 21 — IA (opcional)**: `GET /ai/insights` (flag `ai`) genera 3-5
+  insights en texto sobre las estadísticas y clientes del negocio (API de
+  Anthropic, credenciales de la plataforma, nunca por-tenant). El
+  contexto que recibe el modelo se arma exclusivamente con datos ya
+  acotados al tenant — nunca cruza negocios.
 
-190 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+195 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -329,6 +334,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/22-PAGINA-PUBLICA-QR-PWA.md`](docs/22-PAGINA-PUBLICA-QR-PWA.md) | Etapa 18 (solo backend): catálogo público, disponibilidad, reserva sin login, QR — página HTML y PWA diferidas (sin proyecto de frontend) |
 | [`docs/23-SUCURSALES.md`](docs/23-SUCURSALES.md) | Etapa 19: BranchAccessGuard (permisos por sucursal vía UserBranch), Product.branchId (inventario por sucursal) |
 | [`docs/24-DASHBOARD-REPORTES.md`](docs/24-DASHBOARD-REPORTES.md) | Etapa 20: dashboard de métricas + export de ventas/turnos en CSV/PDF/Excel |
+| [`docs/25-IA.md`](docs/25-IA.md) | Etapa 21: insights generados por IA sobre estadísticas/clientes, credenciales de plataforma, nunca cruza tenants |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -344,5 +350,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 21 del roadmap: IA (opcional), según el detalle de
-`docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 22 del roadmap: Auditoría avanzada y
+Observabilidad, según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
