@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 11)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 12)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -6,9 +6,9 @@ completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
 límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
 Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6),
 Profesionales (Etapa 7), Servicios (Etapa 8), Horarios (Etapa 9), Agenda
-y Turnos (Etapa 10) y Productos e Inventario — primer módulo opcional
-gateado de verdad por Feature Flags (Etapa 11). Ver `../docs/` para el
-diseño completo (arquitectura, base de datos, seguridad, roadmap).
+y Turnos (Etapa 10), Productos e Inventario (Etapa 11) y Ventas + Caja +
+Gastos + Comisiones (Etapa 12). Ver `../docs/` para el diseño completo
+(arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -253,6 +253,32 @@ curl -X POST http://localhost:3000/api/v1/purchases/<purchaseId>/receive \
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Ventas, Caja y Gastos
+
+```bash
+# 1) Abrir caja en una sucursal
+curl -X POST http://localhost:3000/api/v1/cash-register/open \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"branchId":"<branchId>","openingAmount":1000}'
+
+# 2) Registrar una venta mixta con pagos combinados
+curl -X POST http://localhost:3000/api/v1/sales \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"branchId":"<branchId>","cashRegisterId":"<cashRegisterId>","professionalId":"<professionalId>","items":[{"itemType":"service","serviceId":"<serviceId>","quantity":1},{"itemType":"product","productId":"<productId>","quantity":2}],"payments":[{"method":"cash","amount":5000},{"method":"card","amount":6000}]}'
+
+# 3) Ver comisiones acumuladas de un profesional
+curl "http://localhost:3000/api/v1/sales/commissions?professionalId=<professionalId>" \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 4) Cerrar caja (arqueo: efectivo esperado vs. contado)
+curl -X POST http://localhost:3000/api/v1/cash-register/<cashRegisterId>/close \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"closingAmount":6000}'
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -295,6 +321,9 @@ src/
 ├── products/                             # catálogo de productos, stock, ajustes, alerta de stock mínimo
 ├── suppliers/                             # proveedores
 ├── purchases/                              # compras con ítems (pending -> received incrementa stock)
+├── cash-register/                           # apertura/cierre de caja con arqueo
+├── sales/                                    # ventas mixtas, pagos combinados, comisiones
+├── expenses/                                  # gastos categorizados (opcionalmente atados a una caja)
 ├── common/dto/                         # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
@@ -338,6 +367,7 @@ test/
 ├── schedule.spec.ts                                # horario semanal, excepciones, feriados+override, disponibilidad
 ├── appointments.spec.ts                            # motor de disponibilidad, transiciones, lista de espera
 ├── products.spec.ts                                # gate de feature flag, stock, compras, aislamiento
+├── sales.spec.ts                                   # ventas mixtas, pagos combinados, arqueo, comisiones
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 

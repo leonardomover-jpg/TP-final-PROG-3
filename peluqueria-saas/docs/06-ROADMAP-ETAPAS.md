@@ -145,9 +145,20 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       `productos.gestionar`/`inventario.gestionar` ya sembrados desde la
       Etapa 2. 95 tests en la suite completa (10 nuevos). Detalle en
       `docs/15-PRODUCTOS-INVENTARIO.md`.
-- [ ] **Etapa 12 — Ventas + Caja + Gastos + Comisiones**: ventas mixtas
-      (servicios+productos), pagos combinados, apertura/cierre de caja con
-      arqueo, gastos categorizados, cálculo de comisiones.
+- [x] **Etapa 12 — Ventas + Caja + Gastos + Comisiones**:
+      `CashRegister`/`Sale`/`SaleItem`/`SalePayment`/`Expense`
+      tenant-scoped. Ventas mixtas (servicios+productos) con precio
+      SIEMPRE del catálogo (nunca del cliente), pagos combinados (la suma
+      tiene que dar el total exacto), descuento y reposición de stock
+      transaccional. Caja: un único registro abierto por sucursal,
+      arqueo real al cerrar (efectivo declarado + ventas en efectivo −
+      gastos, contra lo contado a mano). Comisiones calculadas al vuelo
+      sobre el subtotal de servicios de cada profesional
+      (`Professional.commissionPercentage`, Etapa 7, sin uso hasta
+      ahora). Reusa los permisos `ventas.*`/`caja.*`/`reportes.ver`
+      sembrados desde la Etapa 2; nuevos `gastos.ver/crear`. 105 tests en
+      la suite completa (10 nuevos). Detalle en
+      `docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md`.
 - [ ] **Etapa 13 — Fidelización (Puntos, Promociones, Gift Cards,
       Referidos)**: todos detrás de sus Feature Flags respectivos.
 - [ ] **Etapa 14 — Notificaciones (centro + canales internos)**.
@@ -174,8 +185,8 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 12 del roadmap: Ventas + Caja + Gastos + Comisiones
-— ventas mixtas (servicios+productos, descontando stock de `Product`),
-pagos combinados, apertura/cierre de caja con arqueo, gastos
-categorizados, cálculo de comisiones sobre `Professional.commissionPercentage`
-(según el detalle de más arriba).
+Continuar con la Etapa 13 del roadmap: Fidelización (Puntos, Promociones,
+Gift Cards, Referidos) — todos detrás de sus Feature Flags respectivos
+(ya sembrados desde la Etapa 2: `points`, `gift_cards`, `referrals`; mismo
+patrón de gateo real con `FeatureFlagGuard` estrenado en la Etapa 11 con
+`inventory`), según el detalle de más arriba.

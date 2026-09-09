@@ -55,8 +55,13 @@ repositorio — no comparten código, base de datos ni dependencias.
   de verdad por Feature Flags (`inventory`) — sin habilitarlo, 403 en todo
   el módulo. Productos con SKU único, ajuste de stock, alerta de stock
   mínimo, proveedores, y compras que solo tocan stock al recibirlas.
+- ✅ **Etapa 12 — Ventas + Caja + Gastos + Comisiones**: ventas mixtas
+  (servicios+productos) con precio siempre del catálogo, pagos
+  combinados, descuento/reposición de stock transaccional, apertura/
+  cierre de caja con arqueo real, gastos categorizados, comisiones
+  calculadas sobre el subtotal de servicios de cada profesional.
 
-95 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+105 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -218,9 +223,25 @@ Implementado en Etapa 11 (detalle completo en
   stock de cada ítem y actualiza el costo del producto, en una
   transacción.
 
+Implementado en Etapa 12 (detalle completo en
+[`docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md`](docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md)):
+
+- `POST /sales`: ventas mixtas (servicios+productos) con el precio de cada
+  ítem tomado SIEMPRE del catálogo (nunca del cliente), pagos combinados
+  que tienen que sumar exactamente el total, descuento de stock
+  transaccional (y reposición automática si se cancela la venta).
+- Caja: un único registro abierto por sucursal a la vez; al cerrarla se
+  calcula el arqueo real (efectivo declarado al abrir + ventas en efectivo
+  − gastos de esa caja) contra lo contado a mano, con la diferencia
+  siempre visible, nunca "ajustada".
+- `GET /sales/commissions`: comisiones calculadas al vuelo sobre el
+  subtotal de servicios de cada venta completada, usando el
+  `commissionPercentage` de cada profesional (sembrado desde la Etapa 7,
+  sin uso hasta ahora).
+
 Ver instrucciones para correrlo en [`backend/README.md`](backend/README.md).
 
-El resto de los módulos de negocio (ventas, caja, fidelización, etc.) se
+El resto de los módulos de negocio (fidelización, notificaciones, etc.) se
 implementan en las etapas siguientes, en el orden definido en
 [`docs/06-ROADMAP-ETAPAS.md`](docs/06-ROADMAP-ETAPAS.md).
 
@@ -243,6 +264,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/13-HORARIOS.md`](docs/13-HORARIOS.md) | Etapa 9: BranchSchedule, ScheduleException, catálogo de feriados con override, endpoint de disponibilidad combinada |
 | [`docs/14-AGENDA-TURNOS.md`](docs/14-AGENDA-TURNOS.md) | Etapa 10: Appointment/WaitlistEntry, motor de disponibilidad real, estados del turno, lista de espera |
 | [`docs/15-PRODUCTOS-INVENTARIO.md`](docs/15-PRODUCTOS-INVENTARIO.md) | Etapa 11: Product/Supplier/Purchase, primer módulo gateado por Feature Flags, stock, compras |
+| [`docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md`](docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md) | Etapa 12: Sale/CashRegister/Expense, ventas mixtas, pagos combinados, arqueo de caja, comisiones |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -258,7 +280,6 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 12 del roadmap: Ventas + Caja + Gastos +
-Comisiones — ventas mixtas (servicios+productos), pagos combinados,
-apertura/cierre de caja con arqueo, gastos categorizados, cálculo de
-comisiones, según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 13 del roadmap: Fidelización (Puntos, Promociones,
+Gift Cards, Referidos) — todos detrás de sus Feature Flags respectivos,
+según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

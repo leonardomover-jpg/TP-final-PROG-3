@@ -69,6 +69,9 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
   { key: 'reportes.ver', module: 'reportes', description: 'Ver reportes' },
   { key: 'estadisticas.ver', module: 'reportes', description: 'Ver estadísticas' },
 
+  { key: 'gastos.ver', module: 'gastos', description: 'Ver gastos' },
+  { key: 'gastos.crear', module: 'gastos', description: 'Registrar gastos' },
+
   { key: 'productos.gestionar', module: 'productos', description: 'Gestionar productos' },
   { key: 'inventario.gestionar', module: 'inventario', description: 'Gestionar inventario' },
 

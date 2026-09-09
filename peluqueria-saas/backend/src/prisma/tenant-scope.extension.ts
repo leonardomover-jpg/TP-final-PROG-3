@@ -10,12 +10,13 @@ import { Prisma, PrismaClient } from '@prisma/client';
  * Reglas por modelo (documentadas porque no son todas iguales):
  * - User / Branch / Client / Professional / Service / ScheduleException /
  *   Appointment / WaitlistEntry / Product / Supplier / Purchase /
- *   Subscription / TenantFeatureFlag / AuditLog / SupportTicket: igualdad
- *   estricta de tenantId en todas las operaciones. Un tenant nunca ve ni
- *   escribe filas de otro tenant, punto.
- * - PurchaseItem: no tiene tenantId propio (cuelga de Purchase.tenantId),
- *   no se intercepta acá — PurchasesService valida la pertenencia de la
- *   Purchase padre Y de cada Product referenciado antes de escribir.
+ *   CashRegister / Sale / Expense / Subscription / TenantFeatureFlag /
+ *   AuditLog / SupportTicket: igualdad estricta de tenantId en todas las
+ *   operaciones. Un tenant nunca ve ni escribe filas de otro tenant, punto.
+ * - PurchaseItem / SaleItem / SalePayment: no tienen tenantId propio
+ *   (cuelgan de Purchase.tenantId / Sale.tenantId), no se interceptan acá
+ *   — el service correspondiente valida la pertenencia del padre (y de
+ *   cada Product/Service referenciado) antes de escribir.
  * - TenantHolidayOverride: mismo criterio que TenantFeatureFlag (clave
  *   compuesta [tenantId, holidayId]) — solo findMany/upsert intervenidos,
  *   ver ese bloque para el motivo.
@@ -199,6 +200,64 @@ export function tenantScopeExtension(tenantId: string) {
           },
           async count({ args, query }) {
             args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async create({ args, query }) {
+            args.data = { ...args.data, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
+        },
+        cashRegister: {
+          async findMany({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findFirst({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findUnique({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async update({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async create({ args, query }) {
+            args.data = { ...args.data, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
+        },
+        sale: {
+          async findMany({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findFirst({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findUnique({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async update({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
+            return query(args);
+          },
+          async create({ args, query }) {
+            args.data = { ...args.data, tenantId } as any; // ver "Nota de tipado" arriba
+            return query(args);
+          },
+        },
+        expense: {
+          async findMany({ args, query }) {
+            args.where = { ...args.where, tenantId };
+            return query(args);
+          },
+          async findUnique({ args, query }) {
+            args.where = { ...args.where, tenantId } as typeof args.where;
             return query(args);
           },
           async create({ args, query }) {
