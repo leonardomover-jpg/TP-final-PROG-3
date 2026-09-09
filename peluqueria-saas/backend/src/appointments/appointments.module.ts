@@ -8,5 +8,6 @@ import { WhatsAppModule } from '../whatsapp/whatsapp.module';
   imports: [ScheduleModule, WhatsAppModule],
   controllers: [AppointmentsController],
   providers: [AppointmentsService],
+  exports: [AppointmentsService], // PublicBookingModule (Etapa 18) reusa create() para la reserva pública
 })
 export class AppointmentsModule {}

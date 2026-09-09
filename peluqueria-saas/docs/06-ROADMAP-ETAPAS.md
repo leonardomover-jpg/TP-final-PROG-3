@@ -245,7 +245,23 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       `facebook`/`instagram` (ya sembrados desde el arranque). 161 tests
       en la suite completa (14 nuevos). Detalle en
       `docs/21-INSTAGRAM-FACEBOOK.md`.
-- [ ] **Etapa 18 — Página pública + QR + PWA**.
+- [x] **Etapa 18 — Página pública + QR + PWA (solo backend, decisión
+      explícita)**: no existe un proyecto de frontend en este repo (el
+      único frontend en la raíz es de otro proyecto, "Stock Manager —
+      TIF" / "SH Servicios", sin relación con PROMPT MAESTRO), así que se
+      preguntó explícitamente cómo seguir. Decisión: backend-only.
+      `PublicTenantGuard` resuelve el tenant desde `:tenantSlug` sin JWT y
+      setea un `request.user` sintético — así `ScheduleService.
+      getAvailability` y `AppointmentsService.create` (ya probados) se
+      reusan tal cual, sin duplicar lógica. `GET /public/:tenantSlug`
+      (catálogo con solo campos seguros), `GET .../availability`, `POST
+      .../appointments` (10 req/60s, crea o reusa `Client` por
+      teléfono/email respetando `PlanLimitsService.assertCanCreate`) y
+      `GET .../qr` (PNG real vía `qrcode`, apuntando hoy al propio
+      catálogo JSON como placeholder honesto sin página HTML). Página
+      pública real y PWA quedan explícitamente diferidas hasta que exista
+      un proyecto de frontend. 172 tests en la suite completa (11
+      nuevos). Detalle en `docs/22-PAGINA-PUBLICA-QR-PWA.md`.
 - [ ] **Etapa 19 — Sucursales (multi-sucursal completo)**: permisos por
       sucursal, caja/inventario por sucursal.
 - [ ] **Etapa 20 — Dashboard, Estadísticas y Reportes (PDF/CSV/Excel)**.
@@ -263,4 +279,5 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 18 del roadmap: Página pública + QR + PWA.
+Continuar con la Etapa 19 del roadmap: Sucursales (multi-sucursal
+completo).

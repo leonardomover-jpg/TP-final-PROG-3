@@ -93,8 +93,17 @@ repositorio — no comparten código, base de datos ni dependencias.
   Messenger/Instagram Direct y avisa al staff por su centro de
   notificaciones; responder es manual (sin motor conversacional, mismo
   criterio que WhatsApp).
+- ✅ **Etapa 18 — Página pública + QR + PWA (solo backend)**: no existe un
+  proyecto de frontend en este repo (el frontend en la raíz es de otro
+  proyecto sin relación), así que se preguntó explícitamente cómo seguir
+  y se decidió backend-only. `PublicTenantGuard` resuelve el tenant desde
+  `:tenantSlug` sin login y reusa `ScheduleService`/`AppointmentsService`
+  tal cual (sin duplicar lógica). Catálogo público, disponibilidad,
+  reserva sin login (respeta el límite de clientes del plan) y QR en PNG
+  real. Página HTML y PWA quedan explícitamente diferidas — ver
+  `docs/22-PAGINA-PUBLICA-QR-PWA.md`.
 
-161 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+172 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -303,6 +312,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/19-MERCADO-PAGO-CLIENTES.md`](docs/19-MERCADO-PAGO-CLIENTES.md) | Etapa 15: TenantIntegration/Deposit, Mercado Pago por negocio (credenciales cifradas) para señas de turnos |
 | [`docs/20-WHATSAPP.md`](docs/20-WHATSAPP.md) | Etapa 16: WhatsApp Business por negocio, confirmaciones/cancelaciones/recordatorios, webhook por tenant |
 | [`docs/21-INSTAGRAM-FACEBOOK.md`](docs/21-INSTAGRAM-FACEBOOK.md) | Etapa 17: Facebook Messenger / Instagram Direct por negocio, mensajes entrantes + respuesta manual, webhook por tenant |
+| [`docs/22-PAGINA-PUBLICA-QR-PWA.md`](docs/22-PAGINA-PUBLICA-QR-PWA.md) | Etapa 18 (solo backend): catálogo público, disponibilidad, reserva sin login, QR — página HTML y PWA diferidas (sin proyecto de frontend) |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -318,5 +328,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 18 del roadmap: Página pública + QR + PWA, según el
-detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 19 del roadmap: Sucursales (multi-sucursal
+completo), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

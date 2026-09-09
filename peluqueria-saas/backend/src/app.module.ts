@@ -31,6 +31,7 @@ import { MercadoPagoTenantWebhookModule } from './webhooks/mercado-pago-tenant/m
 import { WhatsAppTenantWebhookModule } from './webhooks/whatsapp-tenant/whatsapp-tenant-webhook.module';
 import { MetaMessagingModule } from './meta-messaging/meta-messaging.module';
 import { MetaTenantWebhookModule } from './webhooks/meta-tenant/meta-tenant-webhook.module';
+import { PublicBookingModule } from './public-booking/public-booking.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -85,6 +86,7 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     WhatsAppTenantWebhookModule,
     MetaMessagingModule,
     MetaTenantWebhookModule,
+    PublicBookingModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,

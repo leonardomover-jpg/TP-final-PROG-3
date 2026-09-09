@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 17)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 18)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -12,9 +12,11 @@ Referidos/Promociones (Etapa 13), Notificaciones — centro + avisos
 internos de stock bajo y límite de plan (Etapa 14), Mercado Pago para
 clientes — integraciones por negocio + señas de turnos (Etapa 15),
 WhatsApp (Meta Cloud API) — confirmaciones/cancelaciones/recordatorios por
-negocio (Etapa 16) e Instagram / Facebook (Meta) — mensajería por negocio
-(Etapa 17). Ver `../docs/` para el diseño completo (arquitectura, base de
-datos, seguridad, roadmap).
+negocio (Etapa 16), Instagram / Facebook (Meta) — mensajería por negocio
+(Etapa 17), y Página pública + QR (Etapa 18, solo backend: catálogo,
+disponibilidad y reserva sin login + QR — sin proyecto de frontend en este
+repo, la página HTML y la PWA quedan diferidas). Ver `../docs/` para el
+diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -455,6 +457,30 @@ curl http://localhost:3000/api/v1/subscription \
 #    firma las notificaciones con el secreto configurado).
 ```
 
+## Flujo mínimo de prueba manual — Página pública + QR (Etapa 18)
+
+Sin login — el `:tenantSlug` es el que se eligió en `register-tenant`.
+Requiere tener al menos una sucursal/servicio/profesional habilitado
+(ver los flujos de arriba).
+
+```bash
+# 1) Catálogo público del negocio (solo campos seguros)
+curl http://localhost:3000/api/v1/public/<slug>
+
+# 2) Disponibilidad (mismo formato que /schedule/availability, Etapa 9)
+curl "http://localhost:3000/api/v1/public/<slug>/availability?date=2026-03-02&professionalId=<id>"
+
+# 3) Reservar sin login (crea el Client si no existe uno con ese
+#    teléfono/email, respetando el límite de clientes del plan)
+curl -X POST http://localhost:3000/api/v1/public/<slug>/appointments \
+  -H "Content-Type: application/json" \
+  -d '{"clientFirstName":"Marta","clientLastName":"Lopez","clientPhone":"+541122223333","branchId":"<id>","professionalId":"<id>","serviceId":"<id>","startAt":"2026-03-02T10:00:00.000Z"}'
+
+# 4) Código QR (PNG) — hoy apunta al propio catálogo JSON (no hay página
+#    HTML todavía, ver docs/22-PAGINA-PUBLICA-QR-PWA.md §5)
+curl http://localhost:3000/api/v1/public/<slug>/qr -o qr.png
+```
+
 ## Estructura
 
 ```
@@ -511,6 +537,7 @@ src/
 │   ├── feature-flags/                           # catálogo global de feature flags
 │   ├── holidays/                                 # catálogo global de feriados argentinos
 │   └── subscriptions/                            # ver suscripciones/vencimientos de todos los negocios
+├── public-booking/                                 # catálogo/disponibilidad/reserva sin login (Etapa 18, solo backend) + QR
 ├── common/filters/                                 # manejo de errores (nunca se expone detalle técnico)
 └── app.module.ts                                    # wiring de guards globales + throttler
 
@@ -537,6 +564,7 @@ test/
 ├── appointments.spec.ts                            # motor de disponibilidad, transiciones, lista de espera
 ├── products.spec.ts                                # gate de feature flag, stock, compras, aislamiento
 ├── sales.spec.ts                                   # ventas mixtas, pagos combinados, arqueo, comisiones
+├── public-booking.spec.ts                          # catálogo/disponibilidad/reserva sin login, límite de plan, QR, aislamiento
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 
