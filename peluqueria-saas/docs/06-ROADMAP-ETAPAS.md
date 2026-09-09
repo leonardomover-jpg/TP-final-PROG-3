@@ -275,7 +275,18 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       exclusivo de una sucursal (null = compartido, default); `SalesService`
       rechaza vender un producto de otra sucursal (400). 181 tests en la
       suite completa (9 nuevos). Detalle en `docs/23-SUCURSALES.md`.
-- [ ] **Etapa 20 — Dashboard, Estadísticas y Reportes (PDF/CSV/Excel)**.
+- [x] **Etapa 20 — Dashboard, Estadísticas y Reportes (PDF/CSV/Excel)**:
+      `GET /reports/dashboard` (ventas/gastos/ganancia neta del período,
+      turnos por estado, top 5 servicios/productos, alertas de stock
+      bajo) y export de ventas/turnos en `GET /reports/{sales,
+      appointments}/export?format=csv|pdf|xlsx`. `ReportsService` arma
+      todo con `findMany` + agregación en memoria — nunca `groupBy`/
+      `aggregate` de Prisma, porque `tenant-scope.extension.ts` no los
+      intercepta y eso mezclaría datos de todos los tenants (mismo
+      motivo por el que `getCommissions`, Etapa 12, ya evitaba
+      `groupBy`). `pdfkit`/`exceljs` nuevos, CSV armado a mano. 190 tests
+      en la suite completa (9 nuevos). Detalle en
+      `docs/24-DASHBOARD-REPORTES.md`.
 - [ ] **Etapa 21 — IA (opcional)**.
 - [ ] **Etapa 22 — Auditoría avanzada y Observabilidad** (dashboards de
       logs/métricas, más allá del `AuditLog` ya modelado en Etapa 1).
@@ -290,5 +301,4 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 20 del roadmap: Dashboard, Estadísticas y Reportes
-(PDF/CSV/Excel).
+Continuar con la Etapa 21 del roadmap: IA (opcional).

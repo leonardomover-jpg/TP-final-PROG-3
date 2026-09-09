@@ -109,8 +109,15 @@ repositorio — no comparten código, base de datos ni dependencias.
   `Product.branchId` (nuevo, opcional) permite stock exclusivo de una
   sucursal — una Venta de otra sucursal no puede consumirlo. Caja/Venta ya
   tenían `branchId` propio desde la Etapa 12.
+- ✅ **Etapa 20 — Dashboard, Estadísticas y Reportes (PDF/CSV/Excel)**:
+  `GET /reports/dashboard` (ventas, gastos, ganancia neta, turnos por
+  estado, top 5 servicios/productos, alertas de stock bajo) y export de
+  ventas/turnos en `GET /reports/{sales,appointments}/export?format=
+  csv|pdf|xlsx`. Todo agregado con `findMany` en memoria, nunca `groupBy`/
+  `aggregate` de Prisma (no interceptados por `tenant-scope.extension.ts`,
+  mezclarían datos entre tenants).
 
-181 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+190 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -321,6 +328,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/21-INSTAGRAM-FACEBOOK.md`](docs/21-INSTAGRAM-FACEBOOK.md) | Etapa 17: Facebook Messenger / Instagram Direct por negocio, mensajes entrantes + respuesta manual, webhook por tenant |
 | [`docs/22-PAGINA-PUBLICA-QR-PWA.md`](docs/22-PAGINA-PUBLICA-QR-PWA.md) | Etapa 18 (solo backend): catálogo público, disponibilidad, reserva sin login, QR — página HTML y PWA diferidas (sin proyecto de frontend) |
 | [`docs/23-SUCURSALES.md`](docs/23-SUCURSALES.md) | Etapa 19: BranchAccessGuard (permisos por sucursal vía UserBranch), Product.branchId (inventario por sucursal) |
+| [`docs/24-DASHBOARD-REPORTES.md`](docs/24-DASHBOARD-REPORTES.md) | Etapa 20: dashboard de métricas + export de ventas/turnos en CSV/PDF/Excel |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -336,5 +344,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 20 del roadmap: Dashboard, Estadísticas y Reportes
-(PDF/CSV/Excel), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 21 del roadmap: IA (opcional), según el detalle de
+`docs/06-ROADMAP-ETAPAS.md`.

@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 19)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 20)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -16,7 +16,8 @@ negocio (Etapa 16), Instagram / Facebook (Meta) — mensajería por negocio
 (Etapa 17), Página pública + QR (Etapa 18, solo backend: catálogo,
 disponibilidad y reserva sin login + QR — sin proyecto de frontend en este
 repo, la página HTML y la PWA quedan diferidas), y Sucursales — permisos
-por sucursal + inventario por sucursal (Etapa 19). Ver `../docs/` para el
+por sucursal + inventario por sucursal (Etapa 19), y Dashboard,
+Estadísticas y Reportes — CSV/PDF/Excel (Etapa 20). Ver `../docs/` para el
 diseño completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
@@ -518,6 +519,26 @@ curl -X POST http://localhost:3000/api/v1/products \
   -d '{"name":"Shampoo","price":3000,"stock":10,"branchId":"<branchIdPrincipal>"}'
 ```
 
+## Flujo mínimo de prueba manual — Dashboard y Reportes (Etapa 20)
+
+```bash
+# 1) Métricas agregadas del período (sin from/to = todo el historial)
+curl "http://localhost:3000/api/v1/reports/dashboard?from=2026-01-01&to=2026-12-31" \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 2) Export de ventas en CSV
+curl "http://localhost:3000/api/v1/reports/sales/export?format=csv" \
+  -H "Authorization: Bearer <accessToken del negocio>" -o ventas.csv
+
+# 3) Export de turnos en Excel
+curl "http://localhost:3000/api/v1/reports/appointments/export?format=xlsx" \
+  -H "Authorization: Bearer <accessToken del negocio>" -o turnos.xlsx
+
+# 4) Export de ventas en PDF
+curl "http://localhost:3000/api/v1/reports/sales/export?format=pdf" \
+  -H "Authorization: Bearer <accessToken del negocio>" -o ventas.pdf
+```
+
 ## Estructura
 
 ```
@@ -575,6 +596,7 @@ src/
 │   ├── holidays/                                 # catálogo global de feriados argentinos
 │   └── subscriptions/                            # ver suscripciones/vencimientos de todos los negocios
 ├── public-booking/                                 # catálogo/disponibilidad/reserva sin login (Etapa 18, solo backend) + QR
+├── reports/                                          # dashboard de métricas + export CSV/PDF/Excel (Etapa 20)
 ├── common/filters/                                 # manejo de errores (nunca se expone detalle técnico)
 └── app.module.ts                                    # wiring de guards globales + throttler
 
@@ -603,6 +625,7 @@ test/
 ├── sales.spec.ts                                   # ventas mixtas, pagos combinados, arqueo, comisiones
 ├── public-booking.spec.ts                          # catálogo/disponibilidad/reserva sin login, límite de plan, QR, aislamiento
 ├── branches-multi.spec.ts                          # BranchAccessGuard (UserBranch/sucursales.todas), inventario por sucursal
+├── reports.spec.ts                                 # dashboard, export CSV/PDF/Excel, permisos, aislamiento
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 
