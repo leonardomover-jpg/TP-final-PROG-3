@@ -60,8 +60,15 @@ repositorio — no comparten código, base de datos ni dependencias.
   combinados, descuento/reposición de stock transaccional, apertura/
   cierre de caja con arqueo real, gastos categorizados, comisiones
   calculadas sobre el subtotal de servicios de cada profesional.
+- ✅ **Etapa 13 — Fidelización**: cuatro módulos opcionales independientes,
+  cada uno detrás de su propio Feature Flag — Puntos (otorgar/canjear
+  contra un ledger), Gift Cards (emisión con código propio o autogenerado,
+  canje parcial, cierre automático al llegar a $0), Referidos (premia al
+  referente al completar el referido), Promociones (catálogo con código
+  único). Sin ningún hook automático desde Ventas todavía — ver
+  `docs/17-FIDELIZACION.md` §6.
 
-105 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+119 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -265,6 +272,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/14-AGENDA-TURNOS.md`](docs/14-AGENDA-TURNOS.md) | Etapa 10: Appointment/WaitlistEntry, motor de disponibilidad real, estados del turno, lista de espera |
 | [`docs/15-PRODUCTOS-INVENTARIO.md`](docs/15-PRODUCTOS-INVENTARIO.md) | Etapa 11: Product/Supplier/Purchase, primer módulo gateado por Feature Flags, stock, compras |
 | [`docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md`](docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md) | Etapa 12: Sale/CashRegister/Expense, ventas mixtas, pagos combinados, arqueo de caja, comisiones |
+| [`docs/17-FIDELIZACION.md`](docs/17-FIDELIZACION.md) | Etapa 13: LoyaltyPointsTransaction/GiftCard/Referral/Promotion, cuatro módulos independientes gateados por Feature Flags |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -280,6 +288,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 13 del roadmap: Fidelización (Puntos, Promociones,
-Gift Cards, Referidos) — todos detrás de sus Feature Flags respectivos,
-según el detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 14 del roadmap: Notificaciones (centro + canales
+internos), según el detalle de `docs/06-ROADMAP-ETAPAS.md`.

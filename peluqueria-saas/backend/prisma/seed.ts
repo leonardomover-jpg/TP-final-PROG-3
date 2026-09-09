@@ -75,6 +75,11 @@ const PERMISSIONS: { key: string; module: string; description: string }[] = [
   { key: 'productos.gestionar', module: 'productos', description: 'Gestionar productos' },
   { key: 'inventario.gestionar', module: 'inventario', description: 'Gestionar inventario' },
 
+  { key: 'puntos.gestionar', module: 'puntos', description: 'Otorgar y canjear puntos de fidelización' },
+  { key: 'giftcards.gestionar', module: 'giftcards', description: 'Emitir, canjear y cancelar gift cards' },
+  { key: 'referidos.gestionar', module: 'referidos', description: 'Registrar y completar referidos entre clientes' },
+  { key: 'promociones.gestionar', module: 'promociones', description: 'Gestionar promociones y descuentos' },
+
   { key: 'soporte.ver', module: 'soporte', description: 'Ver tickets de soporte del negocio' },
   { key: 'soporte.crear', module: 'soporte', description: 'Crear tickets de soporte' },
 
@@ -100,6 +105,7 @@ const FEATURE_FLAGS: { key: string; name: string; description: string }[] = [
   { key: 'points', name: 'Puntos', description: 'Sistema de fidelización por puntos' },
   { key: 'gift_cards', name: 'Gift Cards', description: 'Tarjetas de regalo' },
   { key: 'referrals', name: 'Referidos', description: 'Programa de referidos entre clientes' },
+  { key: 'promotions', name: 'Promociones', description: 'Descuentos y promociones' },
   { key: 'whatsapp', name: 'WhatsApp', description: 'Integración con WhatsApp Business Platform (Meta)' },
   { key: 'instagram', name: 'Instagram', description: 'Integración con Instagram (Meta)' },
   { key: 'facebook', name: 'Facebook', description: 'Integración con Facebook (Meta)' },

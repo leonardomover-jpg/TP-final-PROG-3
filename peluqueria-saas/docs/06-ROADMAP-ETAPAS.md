@@ -159,8 +159,23 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       sembrados desde la Etapa 2; nuevos `gastos.ver/crear`. 105 tests en
       la suite completa (10 nuevos). Detalle en
       `docs/16-VENTAS-CAJA-GASTOS-COMISIONES.md`.
-- [ ] **Etapa 13 — Fidelización (Puntos, Promociones, Gift Cards,
-      Referidos)**: todos detrás de sus Feature Flags respectivos.
+- [x] **Etapa 13 — Fidelización (Puntos, Promociones, Gift Cards,
+      Referidos)**: `LoyaltyPointsTransaction`/`GiftCard`/
+      `GiftCardTransaction`/`Referral`/`Promotion` tenant-scoped, cuatro
+      módulos independientes cada uno detrás de su propio Feature Flag
+      (`points`/`gift_cards`/`referrals`/`promotions` — el último no
+      estaba sembrado, se agregó en esta etapa). Puntos: otorgar/canjear
+      contra un ledger inmutable (`Client.loyaltyPoints` es el saldo
+      cacheado). Gift cards: código propio o autogenerado (único por
+      tenant), canje parcial con cierre automático al llegar a $0,
+      cancelación, rechazo de canje vencido. Referidos: único por
+      cliente referido por negocio, `complete` acredita puntos de
+      recompensa al referente reusando el ledger de Puntos. Promociones:
+      CRUD puro, código único por tenant. Sin ningún hook automático
+      desde `Sale` (Etapa 12) en esta etapa — todo por endpoint
+      explícito. Permisos nuevos `puntos.gestionar`/`giftcards.gestionar`/
+      `referidos.gestionar`/`promociones.gestionar`. 119 tests en la
+      suite completa (14 nuevos). Detalle en `docs/17-FIDELIZACION.md`.
 - [ ] **Etapa 14 — Notificaciones (centro + canales internos)**.
 - [ ] **Etapa 15 — Mercado Pago para clientes**: señas, pago de servicios/
       productos, checkout, webhooks, conciliación con Ventas/Turnos.
@@ -185,8 +200,5 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 13 del roadmap: Fidelización (Puntos, Promociones,
-Gift Cards, Referidos) — todos detrás de sus Feature Flags respectivos
-(ya sembrados desde la Etapa 2: `points`, `gift_cards`, `referrals`; mismo
-patrón de gateo real con `FeatureFlagGuard` estrenado en la Etapa 11 con
-`inventory`), según el detalle de más arriba.
+Continuar con la Etapa 14 del roadmap: Notificaciones (centro + canales
+internos).

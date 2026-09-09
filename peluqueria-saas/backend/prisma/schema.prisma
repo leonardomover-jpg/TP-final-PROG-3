@@ -49,27 +49,31 @@ model Tenant {
   planId String?
   plan   Plan?   @relation(fields: [planId], references: [id])
 
-  branches             Branch[]
-  users                User[]
-  roles                Role[]
-  tenantFeatureFlags   TenantFeatureFlag[]
-  subscription         Subscription?
-  auditLogs            AuditLog[]
-  supportTickets       SupportTicket[]
-  communicationTenants CommunicationTenant[]
-  clients              Client[]
-  professionals        Professional[]
-  services             Service[]
-  scheduleExceptions   ScheduleException[]
-  holidayOverrides     TenantHolidayOverride[]
-  appointments         Appointment[]
-  waitlistEntries      WaitlistEntry[]
-  products             Product[]
-  suppliers            Supplier[]
-  purchases            Purchase[]
-  cashRegisters        CashRegister[]
-  sales                Sale[]
-  expenses             Expense[]
+  branches                  Branch[]
+  users                     User[]
+  roles                     Role[]
+  tenantFeatureFlags        TenantFeatureFlag[]
+  subscription              Subscription?
+  auditLogs                 AuditLog[]
+  supportTickets            SupportTicket[]
+  communicationTenants      CommunicationTenant[]
+  clients                   Client[]
+  professionals             Professional[]
+  services                  Service[]
+  scheduleExceptions        ScheduleException[]
+  holidayOverrides          TenantHolidayOverride[]
+  appointments              Appointment[]
+  waitlistEntries           WaitlistEntry[]
+  products                  Product[]
+  suppliers                 Supplier[]
+  purchases                 Purchase[]
+  cashRegisters             CashRegister[]
+  sales                     Sale[]
+  expenses                  Expense[]
+  loyaltyPointsTransactions LoyaltyPointsTransaction[]
+  giftCards                 GiftCard[]
+  referrals                 Referral[]
+  promotions                Promotion[]
 
   @@index([status])
 }
@@ -339,10 +343,20 @@ model Client {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  clientNotes     ClientNote[]
-  appointments    Appointment[]
-  waitlistEntries WaitlistEntry[]
-  sales           Sale[]
+  // Balance cacheado de puntos (Etapa 13) — el historial real vive en
+  // LoyaltyPointsTransaction; este campo es la suma acumulada, mantenida
+  // en la misma transacción que cada movimiento (evita sumar el ledger
+  // completo en cada lectura).
+  loyaltyPoints Int @default(0)
+
+  clientNotes               ClientNote[]
+  appointments              Appointment[]
+  waitlistEntries           WaitlistEntry[]
+  sales                     Sale[]
+  loyaltyPointsTransactions LoyaltyPointsTransaction[]
+  giftCards                 GiftCard[]
+  referralsMade             Referral[]                 @relation("ReferralsMade")
+  referralsReceived         Referral[]                 @relation("ReferralsReceived")
 
   @@index([tenantId])
   @@index([tenantId, deletedAt])
@@ -830,6 +844,113 @@ model Expense {
 
   @@index([tenantId])
   @@index([cashRegisterId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// FIDELIZACIÓN (Etapa 13) — Puntos, Gift Cards, Referidos, Promociones
+// ─────────────────────────────────────────────────────────────────────────
+// Los cuatro sub-módulos van cada uno detrás de su propio feature flag
+// ("points", "gift_cards", "referrals", ya sembrados desde la Etapa 2;
+// "promotions" se agrega recién en esta etapa porque no existía en el
+// catálogo original) — mismo patrón de gateo real ya estrenado con
+// "inventory" en la Etapa 11. Ninguno de los cuatro se dispara
+// automáticamente desde una Sale (ej. "ganar puntos al vender"): es
+// gestión manual vía sus propios endpoints — enganchar esto a
+// SalesService.create es una integración real que se hace cuando el
+// pedido la pida en concreto, no antes (doc `17-FIDELIZACION.md` §6).
+
+// Balance cacheado en Client.loyaltyPoints (ver más abajo) + un ledger de
+// movimientos para el historial — mismo criterio que Product.stock +
+// ajuste manual (Etapa 11), pero acá con ledger porque el "por qué" de
+// cada movimiento de puntos sí importa para el cliente final.
+model LoyaltyPointsTransaction {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id])
+  delta     Int // positivo = otorgados, negativo = canjeados
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([clientId])
+}
+
+// `code` es el identificador que el cliente presenta para canjear —
+// único por tenant, generado por el servidor (nunca elegido por quien la
+// emite, para no permitir códigos predecibles o duplicados a propósito).
+model GiftCard {
+  id             String    @id @default(cuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id])
+  code           String
+  clientId       String?
+  client         Client?   @relation(fields: [clientId], references: [id])
+  initialBalance Decimal   @db.Decimal(12, 2)
+  balance        Decimal   @db.Decimal(12, 2)
+  status         String    @default("active") // active | redeemed | cancelled
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  transactions GiftCardTransaction[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model GiftCardTransaction {
+  id         String   @id @default(cuid())
+  giftCardId String
+  giftCard   GiftCard @relation(fields: [giftCardId], references: [id])
+  amount     Decimal  @db.Decimal(12, 2) // siempre positivo; el tipo de movimiento lo da `reason`
+  reason     String // ej. "canje", "emisión"
+  createdAt  DateTime @default(now())
+
+  @@index([giftCardId])
+}
+
+// Un cliente existente (`referrerClientId`) trae a alguien nuevo
+// (`referredClientId`). `status` empieza en `pending` y se marca
+// `completed` a mano (ej. cuando el referido hace su primera compra) —
+// sin automatizar esa transición todavía, mismo motivo que el resto del
+// módulo (ver comentario de la sección).
+model Referral {
+  id               String   @id @default(cuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  referrerClientId String
+  referrerClient   Client   @relation("ReferralsMade", fields: [referrerClientId], references: [id])
+  referredClientId String
+  referredClient   Client   @relation("ReferralsReceived", fields: [referredClientId], references: [id])
+  status           String   @default("pending") // pending | completed
+  rewardPoints     Int?
+  createdAt        DateTime @default(now())
+
+  @@unique([tenantId, referredClientId]) // un cliente solo puede haber sido referido una vez
+  @@index([tenantId])
+  @@index([referrerClientId])
+}
+
+// Definición de una promoción/descuento (código opcional). Sin aplicación
+// automática a una Sale en esta etapa — ver comentario de la sección.
+model Promotion {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  name          String
+  code          String?
+  discountType  String // percentage | fixed
+  discountValue Decimal   @db.Decimal(12, 2)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  status        String    @default("active") // active | inactive
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────

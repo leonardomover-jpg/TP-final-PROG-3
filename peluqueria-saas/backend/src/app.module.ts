@@ -20,6 +20,10 @@ import { PurchasesModule } from './purchases/purchases.module';
 import { CashRegisterModule } from './cash-register/cash-register.module';
 import { SalesModule } from './sales/sales.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { PointsModule } from './points/points.module';
+import { GiftCardsModule } from './gift-cards/gift-cards.module';
+import { ReferralsModule } from './referrals/referrals.module';
+import { PromotionsModule } from './promotions/promotions.module';
 import { PlatformAdminAuthModule } from './platform-admin/auth/platform-admin-auth.module';
 import { PlatformAdminTenantsModule } from './platform-admin/tenants/platform-admin-tenants.module';
 import { PlatformAdminAuditModule } from './platform-admin/audit/platform-admin-audit.module';
@@ -63,6 +67,10 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
     CashRegisterModule,
     SalesModule,
     ExpensesModule,
+    PointsModule,
+    GiftCardsModule,
+    ReferralsModule,
+    PromotionsModule,
     SupportModule,
     FeatureFlagsModule,
     PlanLimitsModule,

@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 12)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 13)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -6,8 +6,9 @@ completamente separado del de negocio (Etapa 3), Planes + Feature Flags con
 límites de plan aplicados de verdad (Etapa 4), Suscripciones + Mercado
 Pago — billing real de la plataforma (Etapa 5), Clientes/CRM (Etapa 6),
 Profesionales (Etapa 7), Servicios (Etapa 8), Horarios (Etapa 9), Agenda
-y Turnos (Etapa 10), Productos e Inventario (Etapa 11) y Ventas + Caja +
-Gastos + Comisiones (Etapa 12). Ver `../docs/` para el diseño completo
+y Turnos (Etapa 10), Productos e Inventario (Etapa 11), Ventas + Caja +
+Gastos + Comisiones (Etapa 12) y Fidelización — Puntos/Gift Cards/
+Referidos/Promociones (Etapa 13). Ver `../docs/` para el diseño completo
 (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
@@ -279,6 +280,46 @@ curl -X POST http://localhost:3000/api/v1/cash-register/<cashRegisterId>/close \
   -d '{"closingAmount":6000}'
 ```
 
+## Flujo mínimo de prueba manual — Fidelización
+
+Requiere habilitar cada flag (`points`/`gift_cards`/`referrals`/
+`promotions`) para el negocio — ver el flujo de Planes y Feature Flags más
+arriba.
+
+```bash
+# 1) Otorgar puntos a un cliente y consultar el saldo
+curl -X POST http://localhost:3000/api/v1/points/award \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"clientId":"<clientId>","amount":100,"reason":"Bienvenida"}'
+curl http://localhost:3000/api/v1/points/balance/<clientId> \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 2) Emitir una gift card (código autogenerado) y canjear saldo parcial
+curl -X POST http://localhost:3000/api/v1/gift-cards \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"initialBalance":5000}'
+curl -X POST http://localhost:3000/api/v1/gift-cards/<giftCardId>/redeem \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":1500,"reason":"Corte + color"}'
+
+# 3) Registrar un referido y completarlo (acredita los puntos de recompensa)
+curl -X POST http://localhost:3000/api/v1/referrals \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"referrerClientId":"<clientId1>","referredClientId":"<clientId2>","rewardPoints":50}'
+curl -X POST http://localhost:3000/api/v1/referrals/<referralId>/complete \
+  -H "Authorization: Bearer <accessToken del negocio>"
+
+# 4) Crear una promoción
+curl -X POST http://localhost:3000/api/v1/promotions \
+  -H "Authorization: Bearer <accessToken del negocio>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Verano 2026","code":"VERANO26","discountType":"percentage","discountValue":15}'
+```
+
 ## Flujo mínimo de prueba manual — Suscripciones y Mercado Pago
 
 ```bash
@@ -324,6 +365,10 @@ src/
 ├── cash-register/                           # apertura/cierre de caja con arqueo
 ├── sales/                                    # ventas mixtas, pagos combinados, comisiones
 ├── expenses/                                  # gastos categorizados (opcionalmente atados a una caja)
+├── points/                                     # puntos de fidelización: otorgar/canjear (ledger)
+├── gift-cards/                                  # gift cards: emitir, canjear, cancelar
+├── referrals/                                    # referidos entre clientes: registrar/completar
+├── promotions/                                    # catálogo de promociones (CRUD, sin aplicación a Sale)
 ├── common/dto/                         # DTOs compartidos entre módulos (ej. set-schedule.dto.ts)
 ├── support/                       # tickets de soporte, lado negocio (tenant-scoped)
 ├── feature-flags/                  # FeatureFlagsService (jerarquía) + FeatureFlagGuard, lado negocio
