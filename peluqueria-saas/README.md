@@ -154,6 +154,16 @@ repositorio — no comparten código, base de datos ni dependencias.
   lento a medida que la plataforma crece: latencia plana (~1.2 ms de
   mediana) en los 4 checkpoints, `EXPLAIN ANALYZE` confirma que Postgres
   usa el índice `[tenantId, deletedAt]`, no un `Seq Scan`.
+- ✅ **Etapa 26 — Deploy y Documentación final**: `backend/Dockerfile`
+  (build multi-stage sobre `node:20-alpine`, usuario no-root,
+  `HEALTHCHECK` sobre `GET /health`) + `docker-compose.yml` (Postgres +
+  backend). `binaryTargets` en `schema.prisma` ahora incluye el motor
+  de Alpine además del nativo. Se encontró y corrigió un bug real de
+  build de producción (`tsconfig.build.json` no excluía `scripts/`).
+  El daemon de Docker no está disponible en este sandbox de desarrollo
+  — se validó cada paso del Dockerfile por separado y de forma real
+  fuera del contenedor (documentado en detalle en `docs/30-DEPLOY.md`).
+  **Las 26 etapas del roadmap están completas.**
 
 216 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
@@ -372,6 +382,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/27-SEGURIDAD-HARDENING.md`](docs/27-SEGURIDAD-HARDENING.md) | Etapa 23: RLS de Postgres (activado sin FORCE, con la decisión documentada), helmet, pentest interno |
 | [`docs/28-BACKUPS.md`](docs/28-BACKUPS.md) | Etapa 24: pg_dump + checksum + verificación real por restauración (base descartable), registro de backups |
 | [`docs/29-TESTING-CARGA.md`](docs/29-TESTING-CARGA.md) | Etapa 25: test end-to-end de flujo completo + load test hasta 10.000 negocios simulados (base descartable) |
+| [`docs/30-DEPLOY.md`](docs/30-DEPLOY.md) | Etapa 26: Dockerfile multi-stage, docker-compose, binaryTargets de Prisma para Alpine, qué se pudo validar sin Docker daemon y qué no |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 

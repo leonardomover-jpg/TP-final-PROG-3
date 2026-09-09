@@ -1,0 +1,9 @@
+node_modules
+dist
+*.tsbuildinfo
+.env
+backups
+tmp-test-backups
+npm-debug.log
+test
+.git

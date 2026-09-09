@@ -16,7 +16,14 @@
 // soft delete donde aplique.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" = el motor para donde se corre `prisma generate` (desarrollo/
+  // tests, en este sandbox Ubuntu con glibc). "linux-musl-openssl-3.0.x"
+  // (Etapa 26, doc `30-DEPLOY.md`) = el motor que necesita el Dockerfile,
+  // que parte de `node:20-alpine` (musl, no glibc) — sin este target
+  // explícito, un cliente generado fuera del contenedor no funcionaría
+  // adentro, y viceversa.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

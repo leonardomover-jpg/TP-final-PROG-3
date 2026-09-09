@@ -363,8 +363,52 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       tests en la suite completa (1 nuevo — el load test corre aparte,
       no es parte de la suite de Jest). Detalle en
       `docs/29-TESTING-CARGA.md`.
-- [ ] **Etapa 26 — Deploy y Documentación final**.
+- [x] **Etapa 26 — Deploy y Documentación final**: `backend/Dockerfile`
+      (build multi-stage sobre `node:20-alpine` — build con
+      devDependencies, runtime solo con dependencias de producción,
+      usuario no-root, `HEALTHCHECK` sobre `GET /health`) +
+      `docker-compose.yml` (Postgres + backend, sin atarse a ningún
+      proveedor cloud específico). `binaryTargets` en `schema.prisma`
+      ahora incluye el motor de Alpine (`linux-musl-openssl-3.0.x`)
+      además del nativo — sin esto, un cliente generado en desarrollo
+      (glibc) no tendría el motor correcto dentro del contenedor
+      (musl). Se encontró y corrigió un bug real de esta etapa:
+      `tsconfig.build.json` no excluía `scripts/` (agregado en las
+      Etapas 24/25), y el build de producción (`nest build`) fallaba —
+      no se había detectado antes porque la validación de cada etapa
+      usaba `tsc --noEmit`, que no aplica el `rootDir` del build real.
+      El daemon de Docker no está disponible en este sandbox
+      (contenedor sin privilegio para anidar otro Docker), así que se
+      validó cada paso del Dockerfile por separado y de forma real
+      fuera del contenedor (build limpio, `npm ci --omit=dev` en
+      runtime, arranque real contra la base de este proyecto con
+      `GET /health` respondiendo `ok`) — documentado en detalle,
+      incluyendo qué no se pudo probar y por qué, en
+      `docs/30-DEPLOY.md`. 216 tests en la suite completa (sin cambios
+      de comportamiento, solo packaging).
+
+## Estado del roadmap
+
+Las 26 etapas del plan están completas. El backend implementa el
+104-punto del pedido original de punta a punta: multi-tenancy real
+(aislamiento verificado en cada etapa, no solo declarado), RBAC,
+planes/feature flags/límites, billing con Mercado Pago, el dominio de
+negocio completo (turnos, ventas, caja, inventario, fidelización),
+integraciones externas (Mercado Pago/WhatsApp/Facebook/Instagram por
+negocio), página pública sin login, reportes exportables, IA opcional,
+auditoría y observabilidad, RLS de Postgres como capa adicional,
+backups verificados por restauración real, testing end-to-end y de
+carga hasta 10.000 negocios simulados, y una imagen Docker lista para
+correr. Lo que queda deliberadamente fuera de este repositorio (y por
+qué) está documentado etapa por etapa en su "Qué NO se hizo en esta
+etapa (a propósito)" — el frontend (proyecto aparte, no incluido acá),
+un rol de Postgres restringido para forzar RLS de verdad, un scheduler
+de Jobs en background real, y manifiestos de un proveedor cloud
+específico son los ejemplos más importantes.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 26 del roadmap: Deploy y Documentación final.
+Ninguna pendiente en el roadmap — las 26 etapas están completas. Un
+trabajo futuro razonable, no pedido por este roadmap, sería el frontend
+(consumiendo esta API ya completa) o un ambiente de staging real para
+correr el load test de la Etapa 25 a mayor escala.

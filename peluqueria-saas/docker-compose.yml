@@ -1,0 +1,44 @@
+# Orquestación local/staging (Etapa 26, doc `docs/30-DEPLOY.md`) — NO es
+# un manifiesto de producción para un proveedor cloud específico (eso
+# depende de dónde se despliegue realmente, fuera de alcance de este
+# repo); es lo que hace falta para levantar el backend completo con un
+# solo comando en cualquier máquina con Docker.
+#
+# Uso:
+#   cp backend/.env.example backend/.env   # completar secretos reales
+#   docker compose up --build
+#   docker compose run --rm backend npx prisma migrate deploy   # una vez
+#   docker compose run --rm backend npm run prisma:seed          # una vez
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: peluqueria
+      POSTGRES_PASSWORD: peluqueria
+      POSTGRES_DB: peluqueria_saas
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U peluqueria"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      # Sobrescribe el host de la DATABASE_URL del .env local (pensado
+      # para "localhost", desarrollo sin Compose) por el nombre del
+      # servicio — Compose resuelve "postgres" vía su red interna,
+      # "localhost" no funcionaría desde dentro del contenedor del backend.
+      DATABASE_URL: postgresql://peluqueria:peluqueria@postgres:5432/peluqueria_saas
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

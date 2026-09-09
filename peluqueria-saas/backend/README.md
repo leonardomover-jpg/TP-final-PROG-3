@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 25)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 26 — completo)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -22,10 +22,11 @@ estadísticas y clientes (Etapa 21, opcional), y Auditoría avanzada y
 Observabilidad — AuditInterceptor global, GET /audit, GET /health
 (Etapa 22), y Seguridad hardening — RLS de Postgres, helmet, pentest
 interno (Etapa 23), y Backups — pg_dump + checksum + verificación real
-por restauración (Etapa 24), y Testing end-to-end y de carga — flujo
-real encadenado + load test hasta 10.000 negocios simulados en una base
-descartable (Etapa 25). Ver `../docs/` para el diseño completo
-(arquitectura, base de datos, seguridad, roadmap).
+por restauración (Etapa 24), Testing end-to-end y de carga — flujo real
+encadenado + load test hasta 10.000 negocios simulados en una base
+descartable (Etapa 25), y Deploy — imagen Docker multi-stage lista para
+correr, `docker-compose.yml` (Etapa 26). Ver `../docs/` para el diseño
+completo (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -623,6 +624,24 @@ LOAD_TEST_CHECKPOINTS="10,100" npm run loadtest:run
 npx jest test/e2e-business-flow.spec.ts
 ```
 
+## Flujo mínimo de prueba manual — Deploy (Etapa 26)
+
+```bash
+# Build de la imagen de producción
+docker build -t peluqueria-saas-backend .
+
+# Orquestación completa (backend + Postgres) desde la carpeta padre
+cd ..
+cp backend/.env.example backend/.env   # completar secretos reales
+docker compose up --build
+docker compose run --rm backend npx prisma migrate deploy
+docker compose run --rm backend npm run prisma:seed
+```
+
+Ver `../docs/30-DEPLOY.md` para el detalle del Dockerfile multi-stage,
+por qué las migraciones no corren solas al arrancar el contenedor, y qué
+se pudo validar sin un daemon de Docker disponible en este sandbox.
+
 ## Estructura
 
 ```
@@ -692,6 +711,10 @@ prisma/
 ├── schema.prisma    # modelo de datos (fundacional + auth + SUPER ADMIN + planes/flags + suscripciones)
 ├── migrations/       # historial versionado del schema (nunca a mano en prod)
 └── seed.ts             # permisos + roles de sistema + bootstrap de SUPER ADMIN + planes/flags de ejemplo
+
+Dockerfile          # build multi-stage (Etapa 26) — ver ../docs/30-DEPLOY.md
+.dockerignore
+../docker-compose.yml   # orquestación local/staging (Postgres + backend)
 
 test/
 ├── auth.spec.ts                        # registro, login, refresh con rotación, logout (negocio)
