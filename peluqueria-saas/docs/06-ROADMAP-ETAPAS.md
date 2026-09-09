@@ -312,9 +312,21 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       /health` (nuevo, público) verifica conectividad real a Postgres.
       202 tests en la suite completa (7 nuevos). Detalle en
       `docs/26-AUDITORIA-OBSERVABILIDAD.md`.
-- [ ] **Etapa 23 — Seguridad hardening**: RLS de Postgres activado (ver doc
-      `02`), pentest interno (checklist del doc `04` sección 10). El rate
-      limiting global ya se implementó en la Etapa 3 (`@nestjs/throttler`).
+- [x] **Etapa 23 — Seguridad hardening**: RLS de Postgres `ENABLE`ado (28
+      tablas tenant-scoped, política `tenant_isolation` correcta por
+      tabla) — deliberadamente SIN `FORCE`: verificado empíricamente que
+      forzarlo rompe todo el código que hoy usa `PrismaService` crudo a
+      propósito (Notifications/PlanLimits/FeatureFlags/webhooks/
+      platform-admin), y que wirear `SET LOCAL` por-operación vía Prisma
+      Client Extensions choca con las transacciones interactivas ya
+      usadas en Ventas/Caja/Compras. Queda como base 100% inerte hoy,
+      lista para un futuro rol de Postgres restringido. `helmet` en
+      `main.ts` (cabeceras de seguridad, oculta `X-Powered-By`). Pentest
+      interno: checklist del doc 04 §10 verificado ítem por ítem contra
+      los tests existentes + cobertura nueva de JWT expirado/manipulado
+      (no tenía test explícito), mass assignment y fuga de detalle
+      técnico en errores. 210 tests en la suite completa (8 nuevos).
+      Detalle en `docs/27-SEGURIDAD-HARDENING.md`.
 - [ ] **Etapa 24 — Backups**: automatización, verificación por restauración
       real (no solo "se generó el archivo"), registro de backups.
 - [ ] **Etapa 25 — Testing end-to-end y de carga**: escenarios de
@@ -323,4 +335,4 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 23 del roadmap: Seguridad hardening.
+Continuar con la Etapa 24 del roadmap: Backups.

@@ -128,8 +128,16 @@ repositorio — no comparten código, base de datos ni dependencias.
   existentes. `GET /audit` le da a cada negocio visibilidad de su propio
   registro (antes solo SUPER ADMIN podía verlo). `GET /health` verifica
   conectividad real a la base.
+- ✅ **Etapa 23 — Seguridad hardening**: RLS de Postgres activado (28
+  tablas, política correcta por tabla) — verificado empíricamente que
+  forzarlo hoy rompería el código que usa `PrismaService` crudo a
+  propósito, así que queda como capa adicional inerte, lista para un
+  futuro rol de Postgres restringido (decisión documentada en detalle).
+  `helmet` (cabeceras de seguridad). Pentest interno: checklist del doc
+  04 §10 verificado ítem por ítem, con cobertura nueva de JWT expirado/
+  manipulado que no existía.
 
-202 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+210 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -343,6 +351,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/24-DASHBOARD-REPORTES.md`](docs/24-DASHBOARD-REPORTES.md) | Etapa 20: dashboard de métricas + export de ventas/turnos en CSV/PDF/Excel |
 | [`docs/25-IA.md`](docs/25-IA.md) | Etapa 21: insights generados por IA sobre estadísticas/clientes, credenciales de plataforma, nunca cruza tenants |
 | [`docs/26-AUDITORIA-OBSERVABILIDAD.md`](docs/26-AUDITORIA-OBSERVABILIDAD.md) | Etapa 22: AuditInterceptor global, GET /audit propio del negocio, GET /health |
+| [`docs/27-SEGURIDAD-HARDENING.md`](docs/27-SEGURIDAD-HARDENING.md) | Etapa 23: RLS de Postgres (activado sin FORCE, con la decisión documentada), helmet, pentest interno |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 
@@ -358,5 +367,5 @@ implementan en las etapas siguientes, en el orden definido en
 
 ## Próximo paso
 
-Continuar con la Etapa 23 del roadmap: Seguridad hardening, según el
-detalle de `docs/06-ROADMAP-ETAPAS.md`.
+Continuar con la Etapa 24 del roadmap: Backups, según el detalle de
+`docs/06-ROADMAP-ETAPAS.md`.

@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 22)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 23)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -20,8 +20,9 @@ por sucursal + inventario por sucursal (Etapa 19), y Dashboard,
 Estadísticas y Reportes — CSV/PDF/Excel (Etapa 20), e IA — insights sobre
 estadísticas y clientes (Etapa 21, opcional), y Auditoría avanzada y
 Observabilidad — AuditInterceptor global, GET /audit, GET /health
-(Etapa 22). Ver `../docs/` para el diseño completo (arquitectura, base de
-datos, seguridad, roadmap).
+(Etapa 22), y Seguridad hardening — RLS de Postgres, helmet, pentest
+interno (Etapa 23). Ver `../docs/` para el diseño completo (arquitectura,
+base de datos, seguridad, roadmap).
 
 ## Requisitos
 
@@ -572,6 +573,21 @@ curl "http://localhost:3000/api/v1/audit?entityType=branches" \
   -H "Authorization: Bearer <accessToken del negocio>"
 ```
 
+## Flujo mínimo de prueba manual — Seguridad hardening (Etapa 23)
+
+```bash
+# 1) Cabeceras de seguridad de helmet (y sin X-Powered-By)
+curl -s -D - -o /dev/null http://localhost:3000/api/v1/health | grep -Ei "x-content-type|x-frame|x-powered"
+
+# 2) Un JWT manipulado se rechaza (401)
+curl -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/v1/branches \
+  -H "Authorization: Bearer token.manipulado.aca"
+
+# 3) Ver las políticas de RLS ya creadas (inertes hoy sin FORCE, ver doc
+#    27-SEGURIDAD-HARDENING.md §2)
+psql "$DATABASE_URL" -c "SELECT tablename, policyname FROM pg_policies WHERE schemaname='public';"
+```
+
 ## Estructura
 
 ```
@@ -665,6 +681,7 @@ test/
 ├── ai.spec.ts                                      # insights de IA (mockeado), flag, credenciales, aislamiento
 ├── audit.spec.ts                                   # AuditInterceptor global, GET /audit, permisos, aislamiento
 ├── health.spec.ts                                  # GET /health
+├── security-hardening.spec.ts                      # pentest interno: JWT expirado/manipulado, helmet, mass assignment, fuga de errores
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 
