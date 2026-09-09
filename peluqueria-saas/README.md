@@ -144,8 +144,18 @@ repositorio — no comparten código, base de datos ni dependencias.
   endpoint manual (`POST /platform-admin/backups/run`) como
   `scripts/run-backup.ts`/`npm run backup:run`, pensado para un cron
   externo del sistema operativo o de la plataforma de deploy.
+- ✅ **Etapa 25 — Testing end-to-end y de carga**: un test end-to-end
+  nuevo encadena el flujo real completo de un negocio (alta →
+  configuración → reserva pública sin login → venta → caja → dashboard
+  → auditoría), distinto de los tests por módulo aislado. Un load test
+  (`npm run loadtest:run`, base Postgres descartable, nunca la de
+  dev/test) puebla hasta 10.000 negocios simulados (200.000 filas en
+  `Client`) y prueba que leer los datos de UN negocio no se pone más
+  lento a medida que la plataforma crece: latencia plana (~1.2 ms de
+  mediana) en los 4 checkpoints, `EXPLAIN ANALYZE` confirma que Postgres
+  usa el índice `[tenantId, deletedAt]`, no un `Seq Scan`.
 
-215 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
+216 tests automatizados pasando contra PostgreSQL real (`backend/test/`).
 
 Implementado en Etapa 2:
 
@@ -361,6 +371,7 @@ implementan en las etapas siguientes, en el orden definido en
 | [`docs/26-AUDITORIA-OBSERVABILIDAD.md`](docs/26-AUDITORIA-OBSERVABILIDAD.md) | Etapa 22: AuditInterceptor global, GET /audit propio del negocio, GET /health |
 | [`docs/27-SEGURIDAD-HARDENING.md`](docs/27-SEGURIDAD-HARDENING.md) | Etapa 23: RLS de Postgres (activado sin FORCE, con la decisión documentada), helmet, pentest interno |
 | [`docs/28-BACKUPS.md`](docs/28-BACKUPS.md) | Etapa 24: pg_dump + checksum + verificación real por restauración (base descartable), registro de backups |
+| [`docs/29-TESTING-CARGA.md`](docs/29-TESTING-CARGA.md) | Etapa 25: test end-to-end de flujo completo + load test hasta 10.000 negocios simulados (base descartable) |
 
 ## Stack propuesto (justificado en `01-ANALISIS-Y-ARQUITECTURA.md`)
 

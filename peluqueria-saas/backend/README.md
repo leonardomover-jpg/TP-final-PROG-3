@@ -1,4 +1,4 @@
-# Backend — Prompt Maestro SaaS (Etapas 2 a 24)
+# Backend — Prompt Maestro SaaS (Etapas 2 a 25)
 
 NestJS + Prisma + PostgreSQL. Implementa Autenticación, Usuarios, RBAC y el
 mecanismo de aislamiento multi-tenant (Etapa 2), el panel de SUPER ADMIN
@@ -22,7 +22,9 @@ estadísticas y clientes (Etapa 21, opcional), y Auditoría avanzada y
 Observabilidad — AuditInterceptor global, GET /audit, GET /health
 (Etapa 22), y Seguridad hardening — RLS de Postgres, helmet, pentest
 interno (Etapa 23), y Backups — pg_dump + checksum + verificación real
-por restauración (Etapa 24). Ver `../docs/` para el diseño completo
+por restauración (Etapa 24), y Testing end-to-end y de carga — flujo
+real encadenado + load test hasta 10.000 negocios simulados en una base
+descartable (Etapa 25). Ver `../docs/` para el diseño completo
 (arquitectura, base de datos, seguridad, roadmap).
 
 ## Requisitos
@@ -606,6 +608,21 @@ curl "http://localhost:3000/api/v1/platform-admin/backups" \
 npm run backup:run
 ```
 
+## Flujo mínimo de prueba manual — Testing de carga (Etapa 25)
+
+```bash
+# Load test completo: hasta 10.000 tenants simulados en una base
+# Postgres descartable (nunca toca la de dev/test) — imprime la tabla de
+# latencias por checkpoint y el EXPLAIN ANALYZE del checkpoint más grande.
+npm run loadtest:run
+
+# Corrida rápida (checkpoints más chicos), útil en desarrollo:
+LOAD_TEST_CHECKPOINTS="10,100" npm run loadtest:run
+
+# El test end-to-end (flujo real completo) corre como parte de la suite normal:
+npx jest test/e2e-business-flow.spec.ts
+```
+
 ## Estructura
 
 ```
@@ -702,12 +719,18 @@ test/
 ├── health.spec.ts                                  # GET /health
 ├── security-hardening.spec.ts                      # pentest interno: JWT expirado/manipulado, helmet, mass assignment, fuga de errores
 ├── backups.spec.ts                                 # pg_dump + checksum + verificación real por restauración, listado/detalle, 401
+├── e2e-business-flow.spec.ts                       # flujo real encadenado de punta a punta (Etapa 25), distinto de los tests por módulo
 └── helpers/platform-admin.ts                       # helper compartido: crear+loguear un SUPER ADMIN
 ```
 
 `scripts/run-backup.ts` (`npm run backup:run`, Etapa 24): punto de entrada
 sin HTTP para que un cron externo dispare `PlatformAdminBackupsService.run()`
 — ver `../docs/28-BACKUPS.md` §5.
+
+`scripts/load-test/run-load-test.ts` (`npm run loadtest:run`, Etapa 25):
+puebla hasta 10.000 tenants sintéticos en una base Postgres DESCARTABLE
+(nunca la de dev/test) y mide si leer los datos de un tenant se pone más
+lento a medida que la plataforma crece — ver `../docs/29-TESTING-CARGA.md`.
 
 ## Por qué el aislamiento multi-tenant es "imposible de olvidar"
 

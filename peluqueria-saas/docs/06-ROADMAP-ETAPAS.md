@@ -344,11 +344,27 @@ pasa a la siguiente hasta cerrar el checklist de revisión.
       /platform-admin/backups` (paginado) y `GET
       /platform-admin/backups/:id` completan el registro. 215 tests en
       la suite completa (5 nuevos). Detalle en `docs/28-BACKUPS.md`.
-- [ ] **Etapa 25 — Testing end-to-end y de carga**: escenarios de
-      escalabilidad (10 → 10.000 negocios simulados).
+- [x] **Etapa 25 — Testing end-to-end y de carga**: `test/e2e-business-flow.spec.ts`
+      (nuevo) encadena en un solo test el flujo real completo — alta del
+      negocio, configuración, reserva pública sin login, confirmación,
+      venta con descuento real de stock, cierre de caja, dashboard y
+      auditoría automática — distinto de los tests por módulo aislado ya
+      existentes. `scripts/load-test/run-load-test.ts` (nuevo) responde
+      la pregunta real de "10 → 10.000 negocios": ¿leer los datos de UN
+      tenant se pone más lento a medida que la plataforma tiene más y más
+      negocios? Corre en una base Postgres DESCARTABLE (mismo patrón que
+      la verificación de backups de la Etapa 24 — nunca toca la base de
+      dev/test compartida), la puebla hasta 10.000 tenants sintéticos
+      (200.000 filas en `Client`) y mide la misma query que usa
+      `ClientsService.findAll` en producción: la latencia se mantiene
+      plana (~1.2 ms de mediana) en los 4 checkpoints (10/100/1.000/
+      10.000), y `EXPLAIN ANALYZE` confirma por qué — Postgres usa el
+      índice compuesto `[tenantId, deletedAt]`, no un `Seq Scan`. 216
+      tests en la suite completa (1 nuevo — el load test corre aparte,
+      no es parte de la suite de Jest). Detalle en
+      `docs/29-TESTING-CARGA.md`.
 - [ ] **Etapa 26 — Deploy y Documentación final**.
 
 ## Próxima acción concreta
 
-Continuar con la Etapa 25 del roadmap: Testing end-to-end y de carga
-(escenarios de escalabilidad, 10 → 10.000 negocios simulados).
+Continuar con la Etapa 26 del roadmap: Deploy y Documentación final.

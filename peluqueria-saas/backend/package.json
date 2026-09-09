@@ -12,6 +12,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
     "backup:run": "ts-node scripts/run-backup.ts",
+    "loadtest:run": "ts-node scripts/load-test/run-load-test.ts",
     "test": "jest --runInBand",
     "test:watch": "jest --watch --runInBand"
   },
